@@ -15,7 +15,7 @@ public class Product extends AbstractEntity {
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
     private LocalDate registryDate;
-
+    
     public String getName() {
         return name;
     }
