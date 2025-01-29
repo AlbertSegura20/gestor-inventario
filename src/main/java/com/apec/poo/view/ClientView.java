@@ -4,11 +4,9 @@ import com.apec.poo.entities.Client;
 import com.apec.poo.repository.ClientRepository;
 import com.apec.poo.utils.CustomException;
 import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -21,9 +19,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
-import io.vertx.core.http.impl.Http1xClientConnection;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
@@ -47,7 +43,7 @@ public class ClientView extends Composite<VerticalLayout> {
     public ClientView() {
         VerticalLayout mainLayout = createMainLayout();
         FormLayout formLayout = createFormLayout();
-        HorizontalLayout buttonLayout = createButtonLayout();
+        HorizontalLayout buttonLayout = saveButtonLayout();
 
         mainLayout.add(new H3("Client Information"), formLayout, buttonLayout);
         getContent().add(mainLayout);
@@ -74,7 +70,7 @@ public class ClientView extends Composite<VerticalLayout> {
         return formLayout;
     }
 
-    private HorizontalLayout createButtonLayout() {
+    private HorizontalLayout saveButtonLayout() {
         HorizontalLayout buttonLayout = new HorizontalLayout();
         buttonLayout.addClassName(Gap.MEDIUM);
         buttonLayout.setWidth(FULL_WIDTH);
