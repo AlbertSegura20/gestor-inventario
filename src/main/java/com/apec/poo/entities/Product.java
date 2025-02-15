@@ -15,7 +15,14 @@ public class Product extends AbstractEntity {
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
     private LocalDate registryDate;
-    
+    private String code;
+
+    public String getCode() {
+        return code;
+    }
+    public void setCode(String code) {
+        this.code = code;
+    }
     public String getName() {
         return name;
     }

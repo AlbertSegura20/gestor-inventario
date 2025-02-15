@@ -1,7 +1,6 @@
 package com.apec.poo.view;
 import com.apec.poo.entities.Client;
 import com.apec.poo.repository.ClientRepository;
-import com.apec.poo.repository.GetClientGraphQL;
 import com.apec.poo.utils.ValidationMessage;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
@@ -21,7 +20,6 @@ import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -34,19 +32,21 @@ import java.util.List;
 @ApplicationScoped
 public class ClientGridView extends Composite<VerticalLayout> {
 
-    @Inject
-    ClientRepository clientRepository;
 
+    private final ClientRepository clientRepository;
     private static final String FULL_WIDTH = "100%";
     private static final String MAX_WIDTH = "100%";
+    private static final String WIDTH = "160px";
     private static final String MIN_CONTENT = "min-content";
     private final Grid<Client> clientGrid; // The grid listing the clients.
-    private Button editButton; // Button to trigger edit/save of client.
+//    private Button editButton; // Button to trigger edit/save of client.
     private final ValidationMessage firstNameValidationMessage = new ValidationMessage();
     private final ValidationMessage lastNameValidationMessage = new ValidationMessage();
     private final ValidationMessage emailValidationMessage = new ValidationMessage();
 
-    public ClientGridView() {
+    @Inject
+    public ClientGridView( ClientRepository clientRepository) {
+        this.clientRepository = clientRepository;
         VerticalLayout mainLayout = createMainLayout();
 
         // Add a title
@@ -82,22 +82,18 @@ public class ClientGridView extends Composite<VerticalLayout> {
         grid.removeAllColumns(); // Clear auto-generated columns
 
 
-        Grid.Column<Client> idColumn = grid
-                .addColumn(Client::getId).setHeader("ID")
-                .setWidth("160px")
-                .setFlexGrow(0);
         Grid.Column<Client> firstNameColumn = grid
                 .addColumn(Client::getName).setHeader("First name")
-                .setWidth("160px")
+                .setWidth(WIDTH)
                 .setFlexGrow(0);
         Grid.Column<Client> lastNameColumn = grid
                 .addColumn(Client::getLastName)
                 .setHeader("Last name")
-                .setWidth("160px")
+                .setWidth(WIDTH)
                 .setFlexGrow(0);
         Grid.Column<Client> emailColumn = grid
                 .addColumn(Client::getEmail)
-                .setWidth("160px")
+                .setWidth(WIDTH)
                 .setHeader("Email");
 
         Grid.Column<Client> editColumn = grid.addComponentColumn(client -> {
@@ -108,7 +104,7 @@ public class ClientGridView extends Composite<VerticalLayout> {
                 grid.getEditor().editItem(client);
             });
             return editButton;
-        }).setWidth("160px").setFlexGrow(0);
+        }).setWidth(WIDTH).setFlexGrow(0);
 
         Grid.Column<Client> deleteRow = grid.addComponentColumn(client -> {
             Button editButton = new Button("Delete");

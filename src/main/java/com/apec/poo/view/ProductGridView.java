@@ -1,8 +1,6 @@
 package com.apec.poo.view;
-import com.apec.poo.entities.Client;
+
 import com.apec.poo.entities.Product;
-import com.apec.poo.entities.ProductStatus;
-import com.apec.poo.repository.ClientRepository;
 import com.apec.poo.repository.ProductRepository;
 import com.apec.poo.utils.ValidationMessage;
 import com.vaadin.flow.component.Composite;
@@ -16,7 +14,6 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.converter.StringToBigDecimalConverter;
@@ -27,10 +24,6 @@ import com.vaadin.flow.router.Route;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 
@@ -39,23 +32,21 @@ import java.util.List;
 @Menu(order = 4, title = "All Products")
 public class ProductGridView extends Composite<VerticalLayout> {
 
-    @Inject
-    ClientRepository clientRepository;
 
     private static final String FULL_WIDTH = "100%";
     private static final String MAX_WIDTH = "100%";
     private static final String MIN_CONTENT = "min-content";
-
-
     private final Grid<Product> productGrid; // The grid listing the clients.
-    @Inject
-    ProductRepository productRepository;
-    private Button editButton; // Button to trigger edit/save of client.
+
+    private final ProductRepository productRepository;
+//    private Button editButton; // Button to trigger edit/save of client.
     private final ValidationMessage firstNameValidationMessage = new ValidationMessage();
     private final ValidationMessage lastNameValidationMessage = new ValidationMessage();
     private final ValidationMessage emailValidationMessage = new ValidationMessage();
 
-    public ProductGridView() {
+    @Inject
+    public ProductGridView( ProductRepository productRepository) {
+        this.productRepository = productRepository;
         VerticalLayout mainLayout = createMainLayout();
 
         // Add a title
@@ -91,10 +82,6 @@ public class ProductGridView extends Composite<VerticalLayout> {
         grid.removeAllColumns(); // Clear auto-generated columns
 
 
-        Grid.Column<Product> idColumn = grid
-                .addColumn(Product::getId).setHeader("ID")
-                .setWidth("90px")
-                .setFlexGrow(0);
         Grid.Column<Product> nameColumn = grid
                 .addColumn(Product::getName).setHeader("Name")
                 .setWidth("120px")
@@ -102,7 +89,7 @@ public class ProductGridView extends Composite<VerticalLayout> {
         Grid.Column<Product> descriptionColumn = grid
                 .addColumn(Product::getDescription)
                 .setHeader("Description")
-                .setWidth("160px")
+                .setWidth("200px")
                 .setFlexGrow(0);
         Grid.Column<Product> priceColumn = grid
                 .addColumn(Product::getPrice)

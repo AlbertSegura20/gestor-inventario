@@ -30,8 +30,8 @@ import jakarta.transaction.Transactional;
 @Menu(order = 0, title = "Client")
 public class ClientView extends Composite<VerticalLayout> {
 
-    @Inject
-    ClientRepository clientRepository;
+
+    private final ClientRepository clientRepository;
     TextField firstNameField = new TextField("First Name");
     TextField lastNameField = new TextField("Last Name");
     TextField phoneField = new TextField("Phone Number");
@@ -40,7 +40,9 @@ public class ClientView extends Composite<VerticalLayout> {
     private static final String MAX_WIDTH = "800px";
     private static final String MIN_CONTENT = "min-content";
 
-    public ClientView() {
+    @Inject
+    public ClientView(ClientRepository clientRepository) {
+        this.clientRepository = clientRepository;
         VerticalLayout mainLayout = createMainLayout();
         FormLayout formLayout = createFormLayout();
         HorizontalLayout buttonLayout = saveButtonLayout();
@@ -94,7 +96,8 @@ public class ClientView extends Composite<VerticalLayout> {
         try {
             Client client = createClient();
             clientRepository.persist(client);
-            Notification.show("Saved", 3000, Notification.Position.BOTTOM_CENTER);
+            Notification notification = Notification.show("Cliente guardado", 3000, Notification.Position.BOTTOM_CENTER);
+            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             firstNameField.clear();
             lastNameField.clear();
             phoneField.clear();
@@ -117,27 +120,15 @@ public class ClientView extends Composite<VerticalLayout> {
         client.setPhoneNumber(phoneField.getValue());
         client.setEmail(emailField.getValue());
 
-        if(client.getName().isEmpty() && client.getLastName().isEmpty() && client.getPhoneNumber().isEmpty()
-                && client.getEmail().isEmpty()) {
-            throw new CustomException("All fields cannot be empty");
-        }
-
-        if (client.getName().isEmpty()) {
-            throw new CustomException("Name cannot be empty");
-        }
-
-        if (client.getLastName().isEmpty()) {
-            throw new CustomException("Last Name cannot be empty");
-        }
-
-        if (client.getPhoneNumber().isEmpty()) {
-            throw new CustomException("Phone Number cannot be empty");
-        }
-        if (client.getEmail().isEmpty()) {
-            throw new CustomException("Email cannot be empty");
-        }
+        validateClient(client);
 
         return client;
+    }
+
+    private void validateClient(Client client){
+        if(client.getName().isEmpty() || client.getLastName().isEmpty() || client.getPhoneNumber().isEmpty() || client.getEmail().isEmpty()){
+            throw new CustomException("All fields are required");
+        }
     }
 
 }
