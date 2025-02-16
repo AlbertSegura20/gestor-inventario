@@ -8,6 +8,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
@@ -17,18 +18,17 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.validator.EmailValidator;
-import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+
 import java.util.List;
 
 
 @PageTitle("All Clients")
 @Route("allclients")
-@Menu(order = 3, title = "All Clients")
 @ApplicationScoped
 public class ClientGridView extends Composite<VerticalLayout> {
 
@@ -36,7 +36,7 @@ public class ClientGridView extends Composite<VerticalLayout> {
     private final ClientRepository clientRepository;
     private static final String FULL_WIDTH = "100%";
     private static final String MAX_WIDTH = "100%";
-    private static final String WIDTH = "160px";
+    private static final String WIDTH = "140px";
     private static final String MIN_CONTENT = "min-content";
     private final Grid<Client> clientGrid; // The grid listing the clients.
 //    private Button editButton; // Button to trigger edit/save of client.
@@ -44,17 +44,18 @@ public class ClientGridView extends Composite<VerticalLayout> {
     private final ValidationMessage lastNameValidationMessage = new ValidationMessage();
     private final ValidationMessage emailValidationMessage = new ValidationMessage();
 
+
     @Inject
-    public ClientGridView( ClientRepository clientRepository) {
+    public ClientGridView(ClientRepository clientRepository) {
         this.clientRepository = clientRepository;
         VerticalLayout mainLayout = createMainLayout();
-
         // Add a title
-        mainLayout.add(new H3("Client Informations"));
+        mainLayout.add(new H3("Client Information"));
         // Add Grid
         clientGrid = createClientGrid();
         mainLayout.add(clientGrid);
         getContent().add(mainLayout);
+        fillGridWithData();
     }
 
     private VerticalLayout createMainLayout() {
@@ -97,7 +98,7 @@ public class ClientGridView extends Composite<VerticalLayout> {
                 .setHeader("Email");
 
         Grid.Column<Client> editColumn = grid.addComponentColumn(client -> {
-            Button editButton = new Button("Edit");
+            Button editButton = new Button("Edit", new Icon("vaadin", "edit"));
             editButton.addClickListener(e -> {
                 if (editor.isOpen())
                     editor.cancel();
@@ -107,12 +108,13 @@ public class ClientGridView extends Composite<VerticalLayout> {
         }).setWidth(WIDTH).setFlexGrow(0);
 
         Grid.Column<Client> deleteRow = grid.addComponentColumn(client -> {
-            Button editButton = new Button("Delete");
-            editButton.addClickListener(e -> {
-               // Borrar cliente, pending action
-            });
-            return editButton;
-        }).setWidth("100px").setFlexGrow(0);
+            Button deleteButton = new Button("Detete", new Icon("vaadin", "trash"));
+
+            deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+            deleteButton.addClickListener(e  -> {});
+            return deleteButton;
+        }).setWidth(WIDTH).setFlexGrow(0);
+
 
 
 
@@ -171,7 +173,8 @@ public class ClientGridView extends Composite<VerticalLayout> {
         return grid;
     }
 
-    @PostConstruct
+
+
     private void fillGridWithData(){
         List<Client> clients = clientRepository.findAll().list();
         clientGrid.setItems(clients);

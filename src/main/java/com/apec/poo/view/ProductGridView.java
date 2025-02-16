@@ -18,10 +18,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.converter.StringToBigDecimalConverter;
 import com.vaadin.flow.data.validator.EmailValidator;
-import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
 import java.util.List;
@@ -29,7 +27,6 @@ import java.util.List;
 
 @PageTitle("All Products")
 @Route("allproducts")
-@Menu(order = 4, title = "All Products")
 public class ProductGridView extends Composite<VerticalLayout> {
 
 
@@ -50,12 +47,13 @@ public class ProductGridView extends Composite<VerticalLayout> {
         VerticalLayout mainLayout = createMainLayout();
 
         // Add a title
-        mainLayout.add(new H3("Product Informations"));
+        mainLayout.add(new H3("Product Information"));
 
         // Add Grid
         productGrid = createProductGrid();
         mainLayout.add(productGrid);
         getContent().add(mainLayout);
+        fillGridWithData();
     }
 
     private VerticalLayout createMainLayout() {
@@ -190,7 +188,6 @@ public class ProductGridView extends Composite<VerticalLayout> {
     }
 
 
-    @PostConstruct
     private void fillGridWithData(){
         List<Product> products = productRepository.findAll().list();
         productGrid.setItems(products);

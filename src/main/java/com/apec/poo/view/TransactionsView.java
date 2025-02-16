@@ -22,6 +22,8 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Menu;
@@ -54,7 +56,11 @@ public class TransactionsView extends Composite<VerticalLayout> {
     private final TextField registrationDateField = createRegistrationDateField();
     private final ComboBox<Product> productNameComboBox = new ComboBox<>("Product name");
     private final DatePicker transactionDatePicker = new DatePicker("Transaction date");
+    private boolean eventHandled = false;
     private final NumberField priceField = createPriceField();
+    Tab tab1 = new Tab("Register transaction");
+    Tab tab2 = new Tab("All transactions");
+    TabSheet tabs = new TabSheet();
 
 
     @Inject
@@ -64,8 +70,15 @@ public class TransactionsView extends Composite<VerticalLayout> {
         this.transactionRepository = transactionRepository;
         initializeContent();
         VerticalLayout mainLayout = createMainLayout();
+        VerticalLayout content = new VerticalLayout();
+
+        tabs.setWidth(FULL_WIDTH);
+        tabs.add(tab1, mainLayout);
+        tabs.add(tab2, new TransactionsGridView(transactionRepository));
+
+        content.add(tabs);
         mainLayout.add(createHeader(), createFormLayout(), createLayoutRow());
-        getContent().add(mainLayout);
+        getContent().add(content);
 
     }
 
@@ -86,7 +99,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
     }
 
     private H3 createHeader() {
-        H3 header = new H3("Transactions");
+        H3 header = new H3("Transaction");
         header.setWidth(FULL_WIDTH);
         return header;
     }
@@ -162,6 +175,20 @@ public class TransactionsView extends Composite<VerticalLayout> {
             if (priceField.getValue() == null) {
                 priceField.setValue(0.0);
             }
+
+            if(!eventHandled){
+
+                if(e.getValue() < 0.0){
+                    Notification notification = Notification.show("La cantidad debe ser mayor a 0", 3000, Notification.Position.BOTTOM_CENTER);
+                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                }
+                if(e.getValue() > quantityField.getValue()){
+                    Notification notification = Notification.show("La cantidad debe ser menor o igual a la cantidad disponible", 3000, Notification.Position.BOTTOM_CENTER);
+                    notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
+                }
+
+            }
+
             Double totalPrice = totalQuantity.getValue() * priceField.getValue();
             totalPriceField.setValue(totalPrice);
         });
@@ -189,6 +216,13 @@ public class TransactionsView extends Composite<VerticalLayout> {
         saveButton.addClickListener(e -> saveTransaction());
 
         Button cancelButton = new Button("Cancel");
+        /// Revisar, no borra del todo
+        cancelButton.addClickListener(e -> {
+            clearFields();
+            Notification notification = Notification.show("Operacion cancelada", 3000, Notification.Position.BOTTOM_CENTER);
+            notification.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+        });
+
         cancelButton.setWidth(MIN_CONTENT);
 
         buttonLayout.add(saveButton, cancelButton);
@@ -238,8 +272,9 @@ public class TransactionsView extends Composite<VerticalLayout> {
         Transaction transaction = new Transaction();
         transaction.setClient(clientNameComboBox.getValue());
         transaction.setProduct(productNameComboBox.getValue());
-        transaction.setQuantityTransaction(quantityField.getValue());
+        transaction.setQuantityTransaction(totalQuantityField.getValue());
         transaction.setTransactionDate(transactionDatePicker.getValue().atStartOfDay());
+
         double totalPrice =  priceField.getValue() * quantityField.getValue();
         transaction.setTotalPrice(BigDecimal.valueOf(totalPrice));
 
@@ -251,8 +286,16 @@ public class TransactionsView extends Composite<VerticalLayout> {
         try {
             Transaction transaction = createTransaction();
             transactionRepository.persist(transaction);
+            Product product = transaction.getProduct();
+            product = productRepository.findById(product.getId());
+
+            double quantityProductLeft = transaction.getProduct().getQuantity() -  transaction.getQuantityTransaction();
+            product.setQuantity((int) quantityProductLeft);
+            productRepository.persist(product);
+
             Notification notification = Notification.show("Transaccion guardada", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            eventHandled = true;
 
             // Clearing text fields
             clearFields();
@@ -264,6 +307,8 @@ public class TransactionsView extends Composite<VerticalLayout> {
             Notification notification = Notification.show("Se produjo un error intentando realizar la transaccion", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
+
+        eventHandled = false;
 
     }
 

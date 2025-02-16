@@ -18,6 +18,8 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Menu;
@@ -49,6 +51,9 @@ public class ProductView extends Composite<VerticalLayout> {
     private final ComboBox<SampleItem> statusComboBox = createComboBox();
     private final DatePicker registrationDatePicker = createDatePicker();
     private final TextField priceField = createPriceField();
+    Tab tab1 = new Tab("Register product");
+    Tab tab2 = new Tab("All products");
+    TabSheet tabs = new TabSheet();
 
 
     @Inject
@@ -56,8 +61,14 @@ public class ProductView extends Composite<VerticalLayout> {
         this.productRepository = productRepository;
         configureContent(getContent());
         VerticalLayout mainLayout = createMainLayout();
+        VerticalLayout content = new VerticalLayout();
+        tabs.setWidth(FULL_WIDTH);
+        tabs.add(tab1, mainLayout);
+        tabs.add(tab2, new ProductGridView(productRepository));
+        content.add(tabs);
+        getContent().add(content);
         mainLayout.add(createHeader(), createForm(), saveButtonLayout());
-        getContent().add(mainLayout);
+
     }
 
     private void configureContent(VerticalLayout content) {
@@ -84,7 +95,8 @@ public class ProductView extends Composite<VerticalLayout> {
     private FormLayout createForm() {
         FormLayout formLayout = new FormLayout();
         formLayout.setWidth(FULL_WIDTH);
-        formLayout.add(productCodeField, nameField, quantityField, descriptionField, statusComboBox, registrationDatePicker, priceField);
+        formLayout.add(productCodeField, nameField, quantityField, descriptionField,
+                statusComboBox, registrationDatePicker, priceField);
         return formLayout;
     }
 
@@ -96,8 +108,16 @@ public class ProductView extends Composite<VerticalLayout> {
         buttonLayout.getStyle().set("flex-grow", "1");
 
         Button saveButton = createPrimaryButton();
-        Button cancelButton = createButton();
         saveButton.addClickListener(e -> saveProduct());
+
+        Button cancelButton = createButton();
+        cancelButton.addClickListener(e -> {
+            clearFields();
+            Notification notification = Notification.show("Operacion cancelada", 3000, Notification.Position.BOTTOM_CENTER);
+            notification.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+        });
+
+
 
         buttonLayout.add(saveButton, cancelButton);
         return buttonLayout;
