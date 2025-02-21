@@ -2,14 +2,11 @@ package com.apec.poo.view;
 
 import com.apec.poo.entities.Client;
 import com.apec.poo.repository.ClientRepository;
-import com.apec.poo.repository.ProductRepository;
 import com.apec.poo.utils.CustomException;
 import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -19,7 +16,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Menu;
@@ -29,6 +25,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+import java.util.List;
 
 
 @PageTitle("Person Form")
@@ -50,7 +47,7 @@ public class ClientView extends Composite<VerticalLayout> {
     TabSheet tabs = new TabSheet();
 
     @Inject
-    public ClientView(ClientRepository clientRepository) {
+    public ClientView(ClientRepository clientRepository , ClientGridView self) {
         this.clientRepository = clientRepository;
         VerticalLayout mainLayout = createMainLayout();
         VerticalLayout content = new VerticalLayout();
@@ -58,11 +55,12 @@ public class ClientView extends Composite<VerticalLayout> {
         HorizontalLayout buttonLayout = saveButtonLayout();
         tabs.setWidth(FULL_WIDTH);
         tabs.add(tab1, mainLayout);
-        tabs.add(tab2, new ClientGridView(clientRepository));
+        tabs.add(tab2, new ClientGridView(clientRepository, self));
 
         content.add(tabs);
         mainLayout.add(new H3("Client Information"), formLayout, buttonLayout);
         getContent().add(content);
+
 
     }
 
@@ -96,7 +94,9 @@ public class ClientView extends Composite<VerticalLayout> {
         Button saveButton = new Button("Save");
         saveButton.setWidth(MIN_CONTENT);
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        saveButton.addClickListener(e -> saveClient());
+        saveButton.addClickListener(e -> {
+            saveClient();
+        });
 
         Button cancelButton = new Button("Cancel");
         cancelButton.addClickListener(e -> {
@@ -158,6 +158,12 @@ public class ClientView extends Composite<VerticalLayout> {
         phoneField.clear();
         emailField.clear();
     }
+
+    private List<Client> getAllClients(){
+        return clientRepository.findAll().list();
+    }
+
+
 
 }
 

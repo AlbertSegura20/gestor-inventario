@@ -10,6 +10,8 @@ import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -34,7 +36,9 @@ public class ClientGridView extends Composite<VerticalLayout> {
 
 
     private final ClientRepository clientRepository;
+    private final ClientGridView self;
     private static final String FULL_WIDTH = "100%";
+    private static final String VAADIN = "vaadin";;
     private static final String MAX_WIDTH = "100%";
     private static final String WIDTH = "140px";
     private static final String MIN_CONTENT = "min-content";
@@ -46,7 +50,7 @@ public class ClientGridView extends Composite<VerticalLayout> {
 
 
     @Inject
-    public ClientGridView(ClientRepository clientRepository) {
+    public ClientGridView(ClientRepository clientRepository, ClientGridView self) {
         this.clientRepository = clientRepository;
         VerticalLayout mainLayout = createMainLayout();
         // Add a title
@@ -56,6 +60,7 @@ public class ClientGridView extends Composite<VerticalLayout> {
         mainLayout.add(clientGrid);
         getContent().add(mainLayout);
         fillGridWithData();
+        this.self = self;
     }
 
     private VerticalLayout createMainLayout() {
@@ -96,26 +101,30 @@ public class ClientGridView extends Composite<VerticalLayout> {
                 .addColumn(Client::getEmail)
                 .setWidth(WIDTH)
                 .setHeader("Email");
+        Grid.Column<Client> phoneColumn = grid
+                .addColumn(Client::getPhoneNumber)
+                .setWidth(WIDTH)
+                .setHeader("Phone");
 
         Grid.Column<Client> editColumn = grid.addComponentColumn(client -> {
-            Button editButton = new Button("Edit", new Icon("vaadin", "edit"));
+            Button editButton = new Button("Edit", new Icon(VAADIN, "edit"));
             editButton.addClickListener(e -> {
                 if (editor.isOpen())
                     editor.cancel();
                 grid.getEditor().editItem(client);
             });
             return editButton;
-        }).setWidth(WIDTH).setFlexGrow(0);
+        }).setWidth("160px").setFlexGrow(0);
 
-        Grid.Column<Client> deleteRow = grid.addComponentColumn(client -> {
-            Button deleteButton = new Button("Detete", new Icon("vaadin", "trash"));
 
+        Grid.Column<Client> deleteColumn = grid.addComponentColumn(client -> {
+            Button deleteButton = new Button("Delete", new Icon(VAADIN, "trash"));
             deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
-            deleteButton.addClickListener(e  -> {});
-            return deleteButton;
+            deleteButton.addClickListener(event -> {
+                deleteButtonClicked(client);
+                fillGridWithData();
+            }); return deleteButton;
         }).setWidth(WIDTH).setFlexGrow(0);
-
-
 
 
         Binder<Client> binder = new Binder<>(Client.class);
@@ -146,7 +155,23 @@ public class ClientGridView extends Composite<VerticalLayout> {
                 .bind(Client::getEmail, Client::setEmail);
         emailColumn.setEditorComponent(emailField);
 
-        Button saveButton = new Button("Save", e -> editor.save());
+        TextField phoneField = new TextField();
+        phoneField.setWidthFull();
+        binder.forField(phoneField)
+                .asRequired("Phone number must not be empty")
+                .withStatusLabel(firstNameValidationMessage)
+                .bind(Client::getPhoneNumber, Client::setPhoneNumber);
+        phoneColumn.setEditorComponent(phoneField);
+
+
+        Button saveButton = new Button("Save", new Icon(VAADIN, "check"), e -> {
+            editButtonClicked(clientGrid.getEditor().getItem(), firstNameField, lastNameField, emailField, phoneField);
+            editor.save();
+        });
+
+
+        saveButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+
         Button cancelButton = new Button(VaadinIcon.CLOSE.create(),
                 e -> editor.cancel());
         cancelButton.addThemeVariants(ButtonVariant.LUMO_ICON,
@@ -175,10 +200,73 @@ public class ClientGridView extends Composite<VerticalLayout> {
 
 
 
-    private void fillGridWithData(){
+    public void fillGridWithData(){
         List<Client> clients = clientRepository.findAll().list();
         clientGrid.setItems(clients);
     }
+
+
+    private void deleteButtonClicked(Client client) {
+        self.deleteClient(client);
+    }
+
+    @Transactional
+    public void deleteClient(Client client) {
+        try {
+            clientRepository.delete(client);
+        } catch (Exception e) {
+            Notification notification = new Notification("Error al eliminar el cliente", 3000, Notification.Position.TOP_CENTER);
+            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            notification.open();
+
+        }
+
+    }
+
+    private void editButtonClicked(Client client, TextField firstNameField, TextField lastNameField, EmailField emailField, TextField phoneField ) {
+        // Call the transactional method via the proxy
+        self.updateClient(client, firstNameField, lastNameField, emailField, phoneField);
+    }
+
+    @Transactional
+    public void updateClient(Client client, TextField firstNameField, TextField lastNameField, EmailField emailField, TextField phoneField) {
+        // Validate fields
+        String clientNameUpdated = firstNameField.getValue();
+        String lastNameUpdated = lastNameField.getValue();
+        String emailUpdated = emailField.getValue();
+        String phoneUpdated = phoneField.getValue();
+
+        if (clientNameUpdated == null || clientNameUpdated.isEmpty() ||
+                lastNameUpdated == null || lastNameUpdated.isEmpty() ||
+                emailUpdated == null || emailUpdated.isEmpty() ||
+                phoneUpdated == null || phoneUpdated.isEmpty()){
+            Notification notification = new Notification("Todos los campos deben estar llenos.", 3000, Notification.Position.TOP_CENTER);
+            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            notification.open();
+            return;
+        }
+
+        try {
+            // Manually modify the entity fields
+            Client clientToUpdate = clientRepository.findById(client.getId());
+            if (clientToUpdate != null) {
+                clientToUpdate.setName(clientNameUpdated);
+                clientToUpdate.setLastName(lastNameUpdated);
+                clientToUpdate.setEmail(emailUpdated);
+                clientToUpdate.setPhoneNumber(phoneUpdated);
+            }
+
+            // JPA will automatically detect changes and persist them when the transaction completes
+            fillGridWithData(); // Refresh the client grid
+        } catch (Exception e) {
+            Notification notification = new Notification("Error al actualizar el cliente", 3000, Notification.Position.TOP_CENTER);
+            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            notification.open();
+
+        }
+    }
+
+
 
 }
 
