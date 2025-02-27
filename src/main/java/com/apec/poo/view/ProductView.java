@@ -3,6 +3,7 @@ package com.apec.poo.view;
 import com.apec.poo.entities.Product;
 import com.apec.poo.entities.ProductStatus;
 import com.apec.poo.repository.ProductRepository;
+import com.apec.poo.repository.TransactionRepository;
 import com.apec.poo.utils.CustomException;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
@@ -57,14 +58,22 @@ public class ProductView extends Composite<VerticalLayout> {
 
 
     @Inject
-    public ProductView(ProductRepository productRepository) {
+    public ProductView(ProductRepository productRepository, TransactionRepository transactionRepository) {
         this.productRepository = productRepository;
         configureContent(getContent());
         VerticalLayout mainLayout = createMainLayout();
         VerticalLayout content = new VerticalLayout();
+        ProductGridView productGridView = new ProductGridView(productRepository, transactionRepository);
         tabs.setWidth(FULL_WIDTH);
         tabs.add(tab1, mainLayout);
-        tabs.add(tab2, new ProductGridView(productRepository));
+        tabs.add(tab2, productGridView);
+
+       tabs.addSelectedChangeListener(event -> {
+         if (tabs.getSelectedTab().equals(tab2)){
+             productGridView.fillGridWithData();
+         }
+       });
+
         content.add(tabs);
         getContent().add(content);
         mainLayout.add(createHeader(), createForm(), saveButtonLayout());

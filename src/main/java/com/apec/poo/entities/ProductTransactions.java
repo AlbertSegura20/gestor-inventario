@@ -6,6 +6,7 @@ import jakarta.persistence.ManyToOne;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Objects;
 
 
 @Entity
@@ -53,5 +54,17 @@ public class ProductTransactions extends AbstractEntity {
         this.date = date;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ProductTransactions that)) return false;
+        if (!super.equals(o)) return false;
+        return Objects.equals(product, that.product) && Objects.equals(userId, that.userId)
+                && Objects.equals(quantity, that.quantity) && Objects.equals(price, that.price)
+                && Objects.equals(date, that.date);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), product, userId, quantity, price, date);
+    }
 }

@@ -1,10 +1,14 @@
 package com.apec.poo.view;
+
 import com.apec.poo.entities.Client;
+import com.apec.poo.entities.Product;
 import com.apec.poo.repository.ClientRepository;
+import com.apec.poo.repository.TransactionRepository;
 import com.apec.poo.utils.ValidationMessage;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.html.H3;
@@ -26,7 +30,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 @PageTitle("All Clients")
@@ -34,33 +41,33 @@ import java.util.List;
 @ApplicationScoped
 public class ClientGridView extends Composite<VerticalLayout> {
 
+    private static final Logger LOGGER = Logger.getLogger(ClientGridView.class.getName());
 
-    private final ClientRepository clientRepository;
-    private final ClientGridView self;
     private static final String FULL_WIDTH = "100%";
-    private static final String VAADIN = "vaadin";;
+    private static final String VAADIN = "vaadin";
     private static final String MAX_WIDTH = "100%";
+
     private static final String WIDTH = "140px";
     private static final String MIN_CONTENT = "min-content";
-    private final Grid<Client> clientGrid; // The grid listing the clients.
-//    private Button editButton; // Button to trigger edit/save of client.
+    private final ClientRepository clientRepository;
+    private final TransactionRepository transactionRepository;
+
+    private final Grid<Client> clientGrid;
     private final ValidationMessage firstNameValidationMessage = new ValidationMessage();
     private final ValidationMessage lastNameValidationMessage = new ValidationMessage();
     private final ValidationMessage emailValidationMessage = new ValidationMessage();
 
 
     @Inject
-    public ClientGridView(ClientRepository clientRepository, ClientGridView self) {
+    public ClientGridView(ClientRepository clientRepository, TransactionRepository transactionRepository) {
+        this.transactionRepository = transactionRepository;
         this.clientRepository = clientRepository;
         VerticalLayout mainLayout = createMainLayout();
-        // Add a title
-        mainLayout.add(new H3("Client Information"));
-        // Add Grid
+        mainLayout.add(createDivForTitleandFilter());
         clientGrid = createClientGrid();
         mainLayout.add(clientGrid);
         getContent().add(mainLayout);
-        fillGridWithData();
-        this.self = self;
+//        fillGridWithData();
     }
 
     private VerticalLayout createMainLayout() {
@@ -68,25 +75,34 @@ public class ClientGridView extends Composite<VerticalLayout> {
         mainLayout.setWidth(FULL_WIDTH);
         mainLayout.setMaxWidth(MAX_WIDTH);
         mainLayout.setHeight(MIN_CONTENT);
-
         getContent().setWidth(FULL_WIDTH);
         getContent().getStyle().set("flex-grow", "1");
         getContent().setJustifyContentMode(JustifyContentMode.START);
         getContent().setAlignItems(Alignment.CENTER);
-
         return mainLayout;
     }
 
+    private HorizontalLayout createDivForTitleandFilter(){
+        HorizontalLayout divLayout = new HorizontalLayout();
+        divLayout.setWidthFull();
+        divLayout.add(new H3("Product Information"), createFilterField());
+        divLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
+        return divLayout;
+    }
+
+    private TextField createFilterField() {
+        TextField filterField = new TextField();
+        filterField.setPlaceholder("Filter...");
+        filterField.setClearButtonVisible(true);
+        filterField.setPrefixComponent(new Icon(VAADIN, "search"));
+        filterField.addValueChangeListener(e -> filterClients(e.getValue()));
+        return filterField;
+    }
 
     private Grid<Client> createClientGrid() {
-        // Create a grid for the Client entity
         Grid<Client> grid = new Grid<>(Client.class);
         Editor<Client> editor = grid.getEditor();
-
-
-        // Set the columns to display specific properties of the Client entity
-        grid.removeAllColumns(); // Clear auto-generated columns
-
+        grid.removeAllColumns();
 
         Grid.Column<Client> firstNameColumn = grid
                 .addColumn(Client::getName).setHeader("First name")
@@ -117,13 +133,21 @@ public class ClientGridView extends Composite<VerticalLayout> {
         }).setWidth("160px").setFlexGrow(0);
 
 
-        Grid.Column<Client> deleteColumn = grid.addComponentColumn(client -> {
+        grid.addComponentColumn(client -> {
             Button deleteButton = new Button("Delete", new Icon(VAADIN, "trash"));
             deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
             deleteButton.addClickListener(event -> {
-                deleteButtonClicked(client);
-                fillGridWithData();
-            }); return deleteButton;
+                ConfirmDialog dialog = new ConfirmDialog();
+                dialog.setHeader("Delete Client");
+                dialog.setText("Are you sure?");
+                dialog.setCancelable(true);
+                dialog.setConfirmText("Delete");
+                dialog.setConfirmButtonTheme("error primary");
+                dialog.addConfirmListener(eventDialog -> deleteClient(client));
+                dialog.open();
+                dialog.setVisible(true);
+            });
+            return deleteButton;
         }).setWidth(WIDTH).setFlexGrow(0);
 
 
@@ -164,23 +188,20 @@ public class ClientGridView extends Composite<VerticalLayout> {
         phoneColumn.setEditorComponent(phoneField);
 
 
-        Button saveButton = new Button("Save", new Icon(VAADIN, "check"), e -> {
-            editButtonClicked(clientGrid.getEditor().getItem(), firstNameField, lastNameField, emailField, phoneField);
+        Button updateButton = new Button("Save", new Icon(VAADIN, "check"), e -> {
+            Client client = clientGrid.getEditor().getItem();
+            updateClient(client, firstNameField, lastNameField, emailField, phoneField);
             editor.save();
         });
 
 
-        saveButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+        updateButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
 
-        Button cancelButton = new Button(VaadinIcon.CLOSE.create(),
-                e -> editor.cancel());
-        cancelButton.addThemeVariants(ButtonVariant.LUMO_ICON,
-                ButtonVariant.LUMO_ERROR);
-        HorizontalLayout actions = new HorizontalLayout(saveButton,
-                cancelButton);
+        Button cancelButton = new Button(VaadinIcon.CLOSE.create(), e -> editor.cancel());
+        cancelButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_ERROR);
+        HorizontalLayout actions = new HorizontalLayout(updateButton, cancelButton);
         actions.setPadding(false);
         editColumn.setEditorComponent(actions);
-
 
         editor.addCancelListener(e -> {
             firstNameValidationMessage.setText("");
@@ -192,81 +213,100 @@ public class ClientGridView extends Composite<VerticalLayout> {
         actions.getThemeList().add("spacing-s");
         actions.add(grid, firstNameValidationMessage, lastNameValidationMessage, emailValidationMessage);
 
-        // Set the width of the grid to full
         grid.setWidthFull();
 
         return grid;
     }
 
-
-
-    public void fillGridWithData(){
-        List<Client> clients = clientRepository.findAll().list();
-        clientGrid.setItems(clients);
+    private void showErrorMessage(String message) {
+        showMessage(message, NotificationVariant.LUMO_ERROR);
     }
 
-
-    private void deleteButtonClicked(Client client) {
-        self.deleteClient(client);
+    private void showInfoMessage(String message) {
+        showMessage(message, NotificationVariant.LUMO_SUCCESS);
     }
 
-    @Transactional
-    public void deleteClient(Client client) {
-        try {
-            clientRepository.delete(client);
-        } catch (Exception e) {
-            Notification notification = new Notification("Error al eliminar el cliente", 3000, Notification.Position.TOP_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            notification.open();
-
-        }
-
+    private void showWarningMessage(String message) {
+        showMessage(message, NotificationVariant.LUMO_WARNING);
     }
 
-    private void editButtonClicked(Client client, TextField firstNameField, TextField lastNameField, EmailField emailField, TextField phoneField ) {
-        // Call the transactional method via the proxy
-        self.updateClient(client, firstNameField, lastNameField, emailField, phoneField);
+    private void showMessage(String message, NotificationVariant variant) {
+        Notification notification = new Notification(message, 3000, Notification.Position.TOP_CENTER);
+        notification.addThemeVariants(variant);
+        notification.open();
     }
 
     @Transactional
     public void updateClient(Client client, TextField firstNameField, TextField lastNameField, EmailField emailField, TextField phoneField) {
-        // Validate fields
         String clientNameUpdated = firstNameField.getValue();
         String lastNameUpdated = lastNameField.getValue();
         String emailUpdated = emailField.getValue();
         String phoneUpdated = phoneField.getValue();
 
-        if (clientNameUpdated == null || clientNameUpdated.isEmpty() ||
-                lastNameUpdated == null || lastNameUpdated.isEmpty() ||
-                emailUpdated == null || emailUpdated.isEmpty() ||
-                phoneUpdated == null || phoneUpdated.isEmpty()){
-            Notification notification = new Notification("Todos los campos deben estar llenos.", 3000, Notification.Position.TOP_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            notification.open();
+        if (clientNameUpdated == null || clientNameUpdated.isEmpty()) {
+            showErrorMessage("Client name must not be empty");
+            return;
+        }
+        if (lastNameUpdated == null || lastNameUpdated.isEmpty()) {
+            showErrorMessage("Client last name must not be empty");
+            return;
+        }
+        if (emailUpdated == null || emailUpdated.isEmpty()) {
+            showErrorMessage("Client email must not be empty");
+            return;
+        }
+        if (phoneUpdated == null || phoneUpdated.isEmpty()) {
+            showErrorMessage("Client phone number must not be empty");
             return;
         }
 
-        try {
-            // Manually modify the entity fields
-            Client clientToUpdate = clientRepository.findById(client.getId());
-            if (clientToUpdate != null) {
-                clientToUpdate.setName(clientNameUpdated);
-                clientToUpdate.setLastName(lastNameUpdated);
-                clientToUpdate.setEmail(emailUpdated);
-                clientToUpdate.setPhoneNumber(phoneUpdated);
-            }
+        clientRepository.updateClient(client, clientNameUpdated, lastNameUpdated, emailUpdated, phoneUpdated);
+        showInfoMessage("Client updated successfully");
+    }
 
-            // JPA will automatically detect changes and persist them when the transaction completes
-            fillGridWithData(); // Refresh the client grid
-        } catch (Exception e) {
-            Notification notification = new Notification("Error al actualizar el cliente", 3000, Notification.Position.TOP_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            notification.open();
+    private void filterClients(String filterText) {
+        List<Client> filteredClients;
 
+        if (filterText == null || filterText.isEmpty()) {
+            filteredClients = clientRepository.findAll().list();
+        } else {
+            List<Client> clientList = clientRepository.findAll().list();
+            filteredClients = clientList.stream()
+                    .filter(client -> client.getName().toLowerCase().contains(filterText.toLowerCase())
+                            || client.getLastName().toLowerCase().contains(filterText.toLowerCase())
+                            || client.getPhoneNumber().contains(filterText)
+                            || client.getEmail().contains(filterText)).toList();
         }
+
+        clientGrid.setItems(filteredClients);
+
     }
 
 
+    public void fillGridWithData() {
+        List<Client> clients = clientRepository.findAll().list();
+        clientGrid.setItems(clients);
+
+    }
+
+    @Transactional
+    public void deleteClient(Client client) {
+        try {
+            boolean isExistTransactionByClient = transactionRepository.getTransactionByClient(client.getId()).isPresent();
+            if (isExistTransactionByClient) {
+                showErrorMessage("You can not delete this client, because this has a transaction");
+                return;
+            }
+            client = clientRepository.findById(client.getId());
+            clientRepository.deleteClientById(client.getId());
+            fillGridWithData();
+            showInfoMessage("Client deleted successfully");
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error to try to delete the client", e);
+            showErrorMessage("Error to try to delete the client");
+        }
+
+    }
 
 }
 

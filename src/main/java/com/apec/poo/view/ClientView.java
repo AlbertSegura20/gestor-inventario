@@ -2,6 +2,7 @@ package com.apec.poo.view;
 
 import com.apec.poo.entities.Client;
 import com.apec.poo.repository.ClientRepository;
+import com.apec.poo.repository.TransactionRepository;
 import com.apec.poo.utils.CustomException;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
@@ -24,7 +25,6 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-
 import java.util.List;
 
 
@@ -35,6 +35,7 @@ public class ClientView extends Composite<VerticalLayout> {
 
 
     private final ClientRepository clientRepository;
+    private final TransactionRepository transactionRepository;
     TextField firstNameField = new TextField("First Name");
     TextField lastNameField = new TextField("Last Name");
     TextField phoneField = new TextField("Phone Number");
@@ -47,15 +48,25 @@ public class ClientView extends Composite<VerticalLayout> {
     TabSheet tabs = new TabSheet();
 
     @Inject
-    public ClientView(ClientRepository clientRepository , ClientGridView self) {
+    public ClientView(ClientRepository clientRepository , TransactionRepository transactionRepository) {
         this.clientRepository = clientRepository;
+        this.transactionRepository = transactionRepository;
         VerticalLayout mainLayout = createMainLayout();
         VerticalLayout content = new VerticalLayout();
         FormLayout formLayout = createFormLayout();
+        ClientGridView clientGridView = new ClientGridView(clientRepository, transactionRepository);
         HorizontalLayout buttonLayout = saveButtonLayout();
         tabs.setWidth(FULL_WIDTH);
         tabs.add(tab1, mainLayout);
-        tabs.add(tab2, new ClientGridView(clientRepository, self));
+        tabs.add(tab2, clientGridView);
+        tabs.addSelectedChangeListener(event -> {
+            Tab tab = event.getSelectedTab();
+            if (tab.getLabel().equals("All clients")){
+                clientGridView.fillGridWithData();
+
+            }
+        });
+
 
         content.add(tabs);
         mainLayout.add(new H3("Client Information"), formLayout, buttonLayout);
@@ -101,7 +112,7 @@ public class ClientView extends Composite<VerticalLayout> {
         Button cancelButton = new Button("Cancel");
         cancelButton.addClickListener(e -> {
             clearFields();
-            Notification notification = Notification.show("Operacion cancelada", 3000, Notification.Position.BOTTOM_CENTER);
+            Notification notification = Notification.show("Operation aborted", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
         });
 
@@ -117,7 +128,7 @@ public class ClientView extends Composite<VerticalLayout> {
         try {
             Client client = createClient();
             clientRepository.persist(client);
-            Notification notification = Notification.show("Cliente guardado", 3000, Notification.Position.BOTTOM_CENTER);
+            Notification notification = Notification.show("Client saved", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             firstNameField.clear();
             lastNameField.clear();
@@ -127,7 +138,7 @@ public class ClientView extends Composite<VerticalLayout> {
             Notification notification = Notification.show(e.getMessage(), 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         }catch (Exception e) {
-            Notification notification = Notification.show("Se produjo un error intentando guardar al cliente", 3000, Notification.Position.BOTTOM_CENTER);
+            Notification notification = Notification.show("An error happened trying to save the client", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
@@ -148,7 +159,7 @@ public class ClientView extends Composite<VerticalLayout> {
 
     private void validateClient(Client client){
         if(client.getName().isEmpty() || client.getLastName().isEmpty() || client.getPhoneNumber().isEmpty() || client.getEmail().isEmpty()){
-            throw new CustomException("Todos los campos son requeridos");
+            throw new CustomException("All fields are required");
         }
     }
 

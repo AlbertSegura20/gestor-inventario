@@ -2,6 +2,9 @@ package com.apec.poo.entities;
 
 import jakarta.persistence.Entity;
 
+import java.util.Objects;
+import java.util.StringJoiner;
+
 @Entity
 public class Client extends AbstractEntity{
 
@@ -33,5 +36,29 @@ public class Client extends AbstractEntity{
     }
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", Client.class.getSimpleName() + "[", "]")
+                .add("id='" + getId() +"'")
+                .add("name='" + name + "'")
+                .add("lastName='" + lastName + "'")
+                .add("email='" + email + "'")
+                .add("phoneNumber='" + phoneNumber + "'")
+                .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Client client)) return false;
+        if (!super.equals(o)) return false;
+        return Objects.equals(name, client.name) && Objects.equals(lastName, client.lastName) && Objects.equals(email,
+                client.email) && Objects.equals(phoneNumber, client.phoneNumber);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), name, lastName, email, phoneNumber);
     }
 }

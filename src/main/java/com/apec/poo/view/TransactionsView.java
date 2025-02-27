@@ -7,7 +7,9 @@ import com.apec.poo.entities.Transaction;
 import com.apec.poo.repository.ClientRepository;
 import com.apec.poo.repository.ProductRepository;
 import com.apec.poo.repository.TransactionRepository;
+import com.apec.poo.utils.CsvService;
 import com.apec.poo.utils.CustomException;
+import com.apec.poo.utils.PdfService;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -56,6 +58,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
     private final TextField registrationDateField = createRegistrationDateField();
     private final ComboBox<Product> productNameComboBox = new ComboBox<>("Product name");
     private final DatePicker transactionDatePicker = new DatePicker("Transaction date");
+
     private boolean eventHandled = false;
     private final NumberField priceField = createPriceField();
     Tab tab1 = new Tab("Register transaction");
@@ -63,18 +66,26 @@ public class TransactionsView extends Composite<VerticalLayout> {
     TabSheet tabs = new TabSheet();
 
 
+
     @Inject
-    public TransactionsView(ClientRepository clientRepository, ProductRepository productRepository, TransactionRepository transactionRepository) {
+    public TransactionsView(ClientRepository clientRepository, ProductRepository productRepository, TransactionRepository transactionRepository, CsvService csvService, PdfService pdfService) {
         this.clientRepository = clientRepository;
         this.productRepository = productRepository;
         this.transactionRepository = transactionRepository;
         initializeContent();
         VerticalLayout mainLayout = createMainLayout();
         VerticalLayout content = new VerticalLayout();
-
+        TransactionsGridView transactionsGridView = new TransactionsGridView(transactionRepository, csvService, pdfService);
         tabs.setWidth(FULL_WIDTH);
         tabs.add(tab1, mainLayout);
-        tabs.add(tab2, new TransactionsGridView(transactionRepository));
+        tabs.add(tab2, transactionsGridView);
+
+        tabs.addSelectedChangeListener(e -> {
+           if(e.getSelectedTab().equals(tab2)){
+            transactionsGridView.fillGridWithData();
+
+           }
+        });
 
         content.add(tabs);
         mainLayout.add(createHeader(), createFormLayout(), createLayoutRow());
@@ -165,7 +176,6 @@ public class TransactionsView extends Composite<VerticalLayout> {
         totalQuantity.setWidth(MIN_CONTENT);
         totalQuantity.setPlaceholder("0.00");
         Div dollarPrefix = new Div();
-        dollarPrefix.setText("$");
         totalQuantity.setPrefixComponent(dollarPrefix);
 
         totalQuantity.addValueChangeListener(e -> {
@@ -216,10 +226,10 @@ public class TransactionsView extends Composite<VerticalLayout> {
         saveButton.addClickListener(e -> saveTransaction());
 
         Button cancelButton = new Button("Cancel");
-        /// Revisar, no borra del todo
+        // Revisar, no borra del todo
         cancelButton.addClickListener(e -> {
             clearFields();
-            Notification notification = Notification.show("Operacion cancelada", 3000, Notification.Position.BOTTOM_CENTER);
+            Notification notification = Notification.show("Operation aborted", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
         });
 
@@ -275,7 +285,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
         transaction.setQuantityTransaction(totalQuantityField.getValue());
         transaction.setTransactionDate(transactionDatePicker.getValue().atStartOfDay());
 
-        double totalPrice =  priceField.getValue() * quantityField.getValue();
+        double totalPrice =  totalQuantityField.getValue() * priceField.getValue();
         transaction.setTotalPrice(BigDecimal.valueOf(totalPrice));
 
         return transaction;
@@ -291,6 +301,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
 
             double quantityProductLeft = transaction.getProduct().getQuantity() -  transaction.getQuantityTransaction();
             product.setQuantity((int) quantityProductLeft);
+
             productRepository.persist(product);
 
             Notification notification = Notification.show("Transaccion guardada", 3000, Notification.Position.BOTTOM_CENTER);
