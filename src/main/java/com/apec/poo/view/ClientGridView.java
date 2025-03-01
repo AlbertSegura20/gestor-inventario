@@ -1,9 +1,9 @@
 package com.apec.poo.view;
 
 import com.apec.poo.entities.Client;
-import com.apec.poo.entities.Product;
 import com.apec.poo.repository.ClientRepository;
 import com.apec.poo.repository.TransactionRepository;
+import com.apec.poo.utils.Utils;
 import com.apec.poo.utils.ValidationMessage;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
@@ -14,8 +14,6 @@ import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -29,8 +27,6 @@ import com.vaadin.flow.router.Route;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,7 +63,7 @@ public class ClientGridView extends Composite<VerticalLayout> {
         clientGrid = createClientGrid();
         mainLayout.add(clientGrid);
         getContent().add(mainLayout);
-//        fillGridWithData();
+
     }
 
     private VerticalLayout createMainLayout() {
@@ -218,23 +214,6 @@ public class ClientGridView extends Composite<VerticalLayout> {
         return grid;
     }
 
-    private void showErrorMessage(String message) {
-        showMessage(message, NotificationVariant.LUMO_ERROR);
-    }
-
-    private void showInfoMessage(String message) {
-        showMessage(message, NotificationVariant.LUMO_SUCCESS);
-    }
-
-    private void showWarningMessage(String message) {
-        showMessage(message, NotificationVariant.LUMO_WARNING);
-    }
-
-    private void showMessage(String message, NotificationVariant variant) {
-        Notification notification = new Notification(message, 3000, Notification.Position.TOP_CENTER);
-        notification.addThemeVariants(variant);
-        notification.open();
-    }
 
     @Transactional
     public void updateClient(Client client, TextField firstNameField, TextField lastNameField, EmailField emailField, TextField phoneField) {
@@ -244,24 +223,24 @@ public class ClientGridView extends Composite<VerticalLayout> {
         String phoneUpdated = phoneField.getValue();
 
         if (clientNameUpdated == null || clientNameUpdated.isEmpty()) {
-            showErrorMessage("Client name must not be empty");
+            Utils.showErrorMessage("Client name must not be empty");
             return;
         }
         if (lastNameUpdated == null || lastNameUpdated.isEmpty()) {
-            showErrorMessage("Client last name must not be empty");
+            Utils.showErrorMessage("Client last name must not be empty");
             return;
         }
         if (emailUpdated == null || emailUpdated.isEmpty()) {
-            showErrorMessage("Client email must not be empty");
+            Utils.showErrorMessage("Client email must not be empty");
             return;
         }
         if (phoneUpdated == null || phoneUpdated.isEmpty()) {
-            showErrorMessage("Client phone number must not be empty");
+            Utils.showErrorMessage("Client phone number must not be empty");
             return;
         }
 
         clientRepository.updateClient(client, clientNameUpdated, lastNameUpdated, emailUpdated, phoneUpdated);
-        showInfoMessage("Client updated successfully");
+        Utils.showInfoMessage("Client updated successfully");
     }
 
     private void filterClients(String filterText) {
@@ -294,16 +273,16 @@ public class ClientGridView extends Composite<VerticalLayout> {
         try {
             boolean isExistTransactionByClient = transactionRepository.getTransactionByClient(client.getId()).isPresent();
             if (isExistTransactionByClient) {
-                showErrorMessage("You can not delete this client, because this has a transaction");
+                Utils.showErrorMessage("You can not delete this client, because this has a transaction");
                 return;
             }
             client = clientRepository.findById(client.getId());
             clientRepository.deleteClientById(client.getId());
             fillGridWithData();
-            showInfoMessage("Client deleted successfully");
+            Utils.showInfoMessage("Client deleted successfully");
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error to try to delete the client", e);
-            showErrorMessage("Error to try to delete the client");
+            Utils.showErrorMessage("Error to try to delete the client");
         }
 
     }

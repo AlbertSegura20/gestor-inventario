@@ -108,9 +108,7 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
 
         grid.addColumn(new ComponentRenderer<>(item -> {
             Checkbox checkbox = new Checkbox();
-            checkbox.addValueChangeListener(event -> {
-                selectedRow.put(item.getId(), event.getValue());
-            });
+            checkbox.addValueChangeListener(event -> selectedRow.put(item.getId(), event.getValue()));
             return checkbox;
         }));
 
@@ -191,10 +189,10 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
         List<Transaction> selectedTransactions = new ArrayList<>();
 
         if(!selectedRow.isEmpty()){
-            selectedRow.forEach((k, v) -> {
-                if(v){
+            selectedRow.forEach((id, isChecked) -> {
+                if(isChecked){
                     selectedTransactions.add(allTransactions.stream().filter(t ->
-                            t.getId().equals(k)).findFirst().get());
+                            t.getId().equals(id)).findFirst().get());
                 }
             });
             confirmFileTypeTransaction(selectedTransactions);

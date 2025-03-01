@@ -17,8 +17,12 @@ public class Utils {
         showMessage(message, NotificationVariant.LUMO_WARNING);
     }
 
+    public static void showContrastMessage(String message) {
+        showMessage(message, NotificationVariant.LUMO_WARNING);
+    }
+
     public static void showMessage(String message, NotificationVariant variant) {
-        Notification notification = new Notification(message, 3000, Notification.Position.TOP_CENTER);
+        Notification notification = new Notification(message, 3000, Notification.Position.BOTTOM_CENTER);
         notification.addThemeVariants(variant);
         notification.open();
     }

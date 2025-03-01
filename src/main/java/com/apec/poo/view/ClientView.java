@@ -4,13 +4,12 @@ import com.apec.poo.entities.Client;
 import com.apec.poo.repository.ClientRepository;
 import com.apec.poo.repository.TransactionRepository;
 import com.apec.poo.utils.CustomException;
+import com.apec.poo.utils.Utils;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -35,7 +34,6 @@ public class ClientView extends Composite<VerticalLayout> {
 
 
     private final ClientRepository clientRepository;
-    private final TransactionRepository transactionRepository;
     TextField firstNameField = new TextField("First Name");
     TextField lastNameField = new TextField("Last Name");
     TextField phoneField = new TextField("Phone Number");
@@ -50,7 +48,6 @@ public class ClientView extends Composite<VerticalLayout> {
     @Inject
     public ClientView(ClientRepository clientRepository , TransactionRepository transactionRepository) {
         this.clientRepository = clientRepository;
-        this.transactionRepository = transactionRepository;
         VerticalLayout mainLayout = createMainLayout();
         VerticalLayout content = new VerticalLayout();
         FormLayout formLayout = createFormLayout();
@@ -105,15 +102,12 @@ public class ClientView extends Composite<VerticalLayout> {
         Button saveButton = new Button("Save");
         saveButton.setWidth(MIN_CONTENT);
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        saveButton.addClickListener(e -> {
-            saveClient();
-        });
+        saveButton.addClickListener(e -> saveClient());
 
         Button cancelButton = new Button("Cancel");
         cancelButton.addClickListener(e -> {
             clearFields();
-            Notification notification = Notification.show("Operation aborted", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+            Utils.showContrastMessage("Operation aborted");
         });
 
         cancelButton.setWidth(MIN_CONTENT);
@@ -128,15 +122,13 @@ public class ClientView extends Composite<VerticalLayout> {
         try {
             Client client = createClient();
             clientRepository.persist(client);
-            Notification notification = Notification.show("Client saved", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            Utils.showInfoMessage("Client saved");
             clearFields();
         }catch (CustomException e){
-            Notification notification = Notification.show(e.getMessage(), 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Utils.showErrorMessage(e.getMessage());
         }catch (Exception e) {
-            Notification notification = Notification.show("An error occurred while trying to save the client", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Utils.showErrorMessage("An error occurred while trying to save the client");
+
         }
 
     }

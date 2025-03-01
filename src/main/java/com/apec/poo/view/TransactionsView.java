@@ -10,6 +10,7 @@ import com.apec.poo.repository.TransactionRepository;
 import com.apec.poo.utils.CsvService;
 import com.apec.poo.utils.CustomException;
 import com.apec.poo.utils.PdfService;
+import com.apec.poo.utils.Utils;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -189,12 +190,10 @@ public class TransactionsView extends Composite<VerticalLayout> {
                 if(!eventHandled){
 
                     if(e.getValue() < 0.0){
-                        Notification notification = Notification.show("The amount must be greater than 0", 3000, Notification.Position.BOTTOM_CENTER);
-                        notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Utils.showErrorMessage("The amount must be greater than 0");
                     }
                     if(e.getValue() > quantityField.getValue()){
-                        Notification notification = Notification.show("The amount must be less than or equal to 0", 3000, Notification.Position.BOTTOM_CENTER);
-                        notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
+                        Utils.showErrorMessage("The amount must be less than or equal to the quantity available");
                     }
 
                 }
@@ -230,8 +229,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
 
         cancelButton.addClickListener(e -> {
             clearFields();
-            Notification notification = Notification.show("Operation aborted", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+           Utils.showContrastMessage("Operation aborted");
         });
 
         cancelButton.setWidth(MIN_CONTENT);
@@ -324,19 +322,16 @@ public class TransactionsView extends Composite<VerticalLayout> {
 
             productRepository.persist(product);
 
-            Notification notification = Notification.show("Transaction saved", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            Utils.showInfoMessage("Transaction saved");
             eventHandled = true;
 
             // Clearing text fields
             clearFields();
 
         }catch (CustomException e){
-            Notification notification = Notification.show(e.getMessage(), 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Utils.showErrorMessage(e.getMessage());
         }catch (Exception e) {
-            Notification notification = Notification.show("An error occurred while trying to save the transaction", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+           Utils.showErrorMessage("An error occurred while saving the transaction");
         }
 
         eventHandled = false;
@@ -354,8 +349,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
 
         for (Map.Entry<String, Object> entry : transactionFields.entrySet()) {
             if (entry.getValue() == null || entry.getValue().toString().isEmpty()) {
-                Notification.show("The field " + entry.getKey() + " is required", 3000,
-                Notification.Position.BOTTOM_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+               Utils.showErrorMessage("The field " + entry.getKey() + " is required");
                 return true;
             }
 

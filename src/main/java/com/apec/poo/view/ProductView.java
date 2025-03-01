@@ -5,6 +5,7 @@ import com.apec.poo.entities.ProductStatus;
 import com.apec.poo.repository.ProductRepository;
 import com.apec.poo.repository.TransactionRepository;
 import com.apec.poo.utils.CustomException;
+import com.apec.poo.utils.Utils;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -121,8 +122,7 @@ public class ProductView extends Composite<VerticalLayout> {
         Button cancelButton = createButton();
         cancelButton.addClickListener(e -> {
             clearFields();
-            Notification notification = Notification.show("Operation aborted", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+            Utils.showContrastMessage("Operation aborted");
         });
 
 
@@ -224,18 +224,15 @@ public class ProductView extends Composite<VerticalLayout> {
             }
             Product product = createProduct();
             productRepository.persist(product);
-            Notification notification = Notification.show("Product saved", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            Utils.showInfoMessage("Product saved");
 
             // Clearing text fields
             clearFields();
 
         }catch (CustomException e){
-            Notification notification = Notification.show(e.getMessage(), 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Utils.showErrorMessage(e.getMessage());
         }catch (Exception e) {
-            Notification notification = Notification.show("An error occurred while trying to save the product", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+           Utils.showErrorMessage("An error occurred while trying to save the product");
         }
 
     }
@@ -254,8 +251,7 @@ public class ProductView extends Composite<VerticalLayout> {
         for (Map.Entry<String, Object> entry : fields.entrySet()) {
             if(entry.getValue() == null || entry.getValue().toString().isEmpty()){
                 String message = String.format("The field %s is required", entry.getKey());
-                Notification notification = Notification.show(message, 3000, Notification.Position.BOTTOM_CENTER);
-                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Utils.showErrorMessage(message);
 
                 return true;
             }
