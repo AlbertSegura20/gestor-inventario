@@ -35,9 +35,8 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
 
     private final TransactionRepository transactionRepository;
     private static final String FULL_WIDTH = "100%";
-    private static final String MAX_WIDTH = "100%";
     private static final String WIDTH = "160px";
-    private static final String MIN_CONTENT = "570px";
+    private static final String MIN_CONTENT = "min-content";
     private final Grid<Transaction> transactionGrid;
     private static final String WIDTH_100 = "100px";
     private static final String WIDTH_130 = "130px";
@@ -67,7 +66,6 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
     private VerticalLayout createMainLayout() {
         VerticalLayout mainLayout = new VerticalLayout();
         mainLayout.setWidth(FULL_WIDTH);
-        mainLayout.setMaxWidth(MAX_WIDTH);
         mainLayout.setHeight(MIN_CONTENT);
 
         getContent().setWidth(FULL_WIDTH);
@@ -259,8 +257,11 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
                             transaction.getClient().getLastName().toLowerCase().contains(filterText.toLowerCase()) ||
                             transaction.getProduct().getName().toLowerCase().contains(filterText.toLowerCase()) ||
                             transaction.getProduct().getCode().toLowerCase().contains(filterText.toLowerCase()) ||
-                            transaction.getProduct().getPrice().toString().toLowerCase().contains(filterText.toLowerCase()) ||
-                            transaction.getQuantityTransaction().toString().toLowerCase().contains(filterText.toLowerCase())
+                            transaction.getProduct().getPrice().toString().contains(filterText) ||
+                            transaction.getQuantityTransaction().toString().toLowerCase().contains(filterText.toLowerCase()) ||
+                            transaction.getTransactionDate().toString().contains(filterText) ||
+                            transaction.getProduct().getRegistryDate().toString().contains(filterText)
+
             ).toList();
 
         }

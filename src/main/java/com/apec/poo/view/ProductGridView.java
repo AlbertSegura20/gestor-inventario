@@ -14,8 +14,6 @@ import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -115,7 +113,7 @@ public class ProductGridView extends Composite<VerticalLayout> {
                 .setFlexGrow(0);
         Grid.Column<Product> priceColumn = grid
                 .addColumn(Product::getTransientPrice)
-                .setWidth(WIDTH_130)
+                .setWidth("100px")
                 .setHeader("Price");
 
         grid.addColumn(Product::getStatus)
@@ -124,11 +122,11 @@ public class ProductGridView extends Composite<VerticalLayout> {
 
         grid.addColumn(Product::getRegistryDate)
                 .setWidth(WIDTH_130)
-                .setHeader("Registry Date");
+                .setHeader("Registry date");
 
         Grid.Column<Product> quantityColumn = grid
                 .addColumn(Product::getQuantity)
-                .setWidth("80px")
+                .setWidth("90px")
                 .setHeader("Quantity");
 
         Grid.Column<Product> editColumn = grid.addComponentColumn(product -> {
@@ -139,7 +137,7 @@ public class ProductGridView extends Composite<VerticalLayout> {
                 grid.getEditor().editItem(product);
             });
             return editButton;
-        }).setWidth("140px").setFlexGrow(0);
+        }).setWidth("150px").setFlexGrow(0);
 
         grid.addComponentColumn(product -> {
             Button deleteButton = new Button("Delete", new Icon(VAADIN, "trash"));
@@ -158,7 +156,7 @@ public class ProductGridView extends Composite<VerticalLayout> {
                 dialog.setVisible(true);
             });
             return deleteButton;
-        }).setWidth("140px").setFlexGrow(0);
+        }).setWidth("150px").setFlexGrow(0);
 
 
         Binder<Product> binder = new Binder<>(Product.class);

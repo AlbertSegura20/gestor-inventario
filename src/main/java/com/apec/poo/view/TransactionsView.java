@@ -35,7 +35,9 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @PageTitle("Transactions")
@@ -58,13 +60,11 @@ public class TransactionsView extends Composite<VerticalLayout> {
     private final TextField registrationDateField = createRegistrationDateField();
     private final ComboBox<Product> productNameComboBox = new ComboBox<>("Product name");
     private final DatePicker transactionDatePicker = new DatePicker("Transaction date");
-
     private boolean eventHandled = false;
     private final NumberField priceField = createPriceField();
     Tab tab1 = new Tab("Register transaction");
     Tab tab2 = new Tab("All transactions");
     TabSheet tabs = new TabSheet();
-
 
 
     @Inject
@@ -170,7 +170,6 @@ public class TransactionsView extends Composite<VerticalLayout> {
     }
 
 
-
     private NumberField createTotalQuantityField() {
         NumberField totalQuantity = new NumberField("Total quantity");
         totalQuantity.setWidth(MIN_CONTENT);
@@ -178,30 +177,32 @@ public class TransactionsView extends Composite<VerticalLayout> {
         Div dollarPrefix = new Div();
         totalQuantity.setPrefixComponent(dollarPrefix);
 
-        totalQuantity.addValueChangeListener(e -> {
-            if (e.getValue() == null) {
-                totalQuantity.setValue(0.0);
-            }
-            if (priceField.getValue() == null) {
-                priceField.setValue(0.0);
-            }
 
-            if(!eventHandled){
-
-                if(e.getValue() < 0.0){
-                    Notification notification = Notification.show("La cantidad debe ser mayor a 0", 3000, Notification.Position.BOTTOM_CENTER);
-                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            totalQuantity.addValueChangeListener(e -> {
+                if (e.getValue() == null) {
+                    totalQuantity.setValue(0.0);
                 }
-                if(e.getValue() > quantityField.getValue()){
-                    Notification notification = Notification.show("La cantidad debe ser menor o igual a la cantidad disponible", 3000, Notification.Position.BOTTOM_CENTER);
-                    notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
+                if (priceField.getValue() == null) {
+                    priceField.setValue(0.0);
                 }
 
-            }
+                if(!eventHandled){
 
-            Double totalPrice = totalQuantity.getValue() * priceField.getValue();
-            totalPriceField.setValue(totalPrice);
-        });
+                    if(e.getValue() < 0.0){
+                        Notification notification = Notification.show("The amount must be greater than 0", 3000, Notification.Position.BOTTOM_CENTER);
+                        notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    }
+                    if(e.getValue() > quantityField.getValue()){
+                        Notification notification = Notification.show("The amount must be less than or equal to 0", 3000, Notification.Position.BOTTOM_CENTER);
+                        notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
+                    }
+
+                }
+
+                Double totalPrice = totalQuantity.getValue() * priceField.getValue();
+                totalPriceField.setValue(totalPrice);
+            });
+
         return totalQuantity;
     }
 
@@ -266,6 +267,20 @@ public class TransactionsView extends Composite<VerticalLayout> {
                     quantityField.setValue((double) product.getQuantity());
                     registrationDateField.setValue(String.valueOf(product.getRegistryDate()));
                     productCodeField.setValue(String.valueOf(product.getCode()));
+
+                    if(quantityField.getValue() == 0){
+                        Notification notification = Notification.show("The product is out of stock", 3000, Notification.Position.BOTTOM_CENTER);
+                        notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
+                        totalQuantityField.setValue(0.0);
+                        totalQuantityField.setReadOnly(true);
+                        transactionDatePicker.setReadOnly(true);
+
+                    }else{
+                        totalQuantityField.setReadOnly(false);
+                        transactionDatePicker.setReadOnly(false);
+                    }
+
+
                 });
 
             }
@@ -294,6 +309,11 @@ public class TransactionsView extends Composite<VerticalLayout> {
     @Transactional
     public void saveTransaction(){
         try {
+
+            if(isValidateFields()){
+               return;
+            }
+
             Transaction transaction = createTransaction();
             transactionRepository.persist(transaction);
             Product product = transaction.getProduct();
@@ -320,6 +340,28 @@ public class TransactionsView extends Composite<VerticalLayout> {
         }
 
         eventHandled = false;
+
+    }
+
+    private boolean isValidateFields(){
+        Map<String, Object> transactionFields = new HashMap<>();
+        transactionFields.put("clientNameComboBox", clientNameComboBox.getValue());
+        transactionFields.put("productNameComboBox", productNameComboBox.getValue());
+        transactionFields.put("quantityField", quantityField.getValue());
+        transactionFields.put("priceField", priceField.getValue());
+        transactionFields.put("totalQuantityField", totalQuantityField.getValue());
+        transactionFields.put("transactionDatePicker", transactionDatePicker.getValue());
+
+        for (Map.Entry<String, Object> entry : transactionFields.entrySet()) {
+            if (entry.getValue() == null || entry.getValue().toString().isEmpty()) {
+                Notification.show("The field " + entry.getKey() + " is required", 3000,
+                Notification.Position.BOTTOM_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return true;
+            }
+
+        }
+        return false;
+
 
     }
 

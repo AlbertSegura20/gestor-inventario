@@ -31,8 +31,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 
 @PageTitle("Product")
@@ -211,7 +210,6 @@ public class ProductView extends Composite<VerticalLayout> {
         product.setPrice(BigDecimal.valueOf(Double.parseDouble(priceField.getValue())));
         product.setRegistryDate(registrationDatePicker.getValue());
         product.setCode(productCodeField.getValue());
-        validateFields(product);
 
         return product;
 
@@ -221,6 +219,9 @@ public class ProductView extends Composite<VerticalLayout> {
     @Transactional
     public void saveProduct(){
         try {
+            if(isFieldsInvalid()){
+                return;
+            }
             Product product = createProduct();
             productRepository.persist(product);
             Notification notification = Notification.show("Product saved", 3000, Notification.Position.BOTTOM_CENTER);
@@ -240,9 +241,27 @@ public class ProductView extends Composite<VerticalLayout> {
     }
 
 
-    private void validateFields(Product product) {
-        if (product.getName().isBlank() || product.getDescription().isBlank() || product.getStatus() == null || product.getQuantity() <= 0 || product.getPrice().doubleValue() <= 0 || product.getRegistryDate() == null || product.getCode().isBlank() ) {
-            throw new CustomException("All fields are required");}
+    private boolean isFieldsInvalid() {
+        Map<String, Object> fields = new HashMap<>();
+        fields.put("name", nameField.getValue());
+        fields.put("description", descriptionField.getValue());
+        fields.put("status", statusComboBox.getValue());
+        fields.put("quantity", quantityField.getValue());
+        fields.put("price", priceField.getValue());
+        fields.put("registryDate", registrationDatePicker.getValue());
+        fields.put("code", productCodeField.getValue());
+
+        for (Map.Entry<String, Object> entry : fields.entrySet()) {
+            if(entry.getValue() == null || entry.getValue().toString().isEmpty()){
+                String message = String.format("The field %s is required", entry.getKey());
+                Notification notification = Notification.show(message, 3000, Notification.Position.BOTTOM_CENTER);
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
 
