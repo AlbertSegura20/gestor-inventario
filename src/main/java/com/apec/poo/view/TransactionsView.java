@@ -226,7 +226,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
         saveButton.addClickListener(e -> saveTransaction());
 
         Button cancelButton = new Button("Cancel");
-        // Revisar, no borra del todo
+
         cancelButton.addClickListener(e -> {
             clearFields();
             Notification notification = Notification.show("Operation aborted", 3000, Notification.Position.BOTTOM_CENTER);
@@ -255,7 +255,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
         comboBox.setItems(productItems.stream().filter(item -> item.getStatus() == ProductStatus.AVAILABLE).toList());
         comboBox.setItemLabelGenerator(Product::getName);
 
-        /// Mover codigo a otro metodo
+
         comboBox.addValueChangeListener(e -> {
 
             if (e.getValue() != null) {
@@ -304,7 +304,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
 
             productRepository.persist(product);
 
-            Notification notification = Notification.show("Transaccion guardada", 3000, Notification.Position.BOTTOM_CENTER);
+            Notification notification = Notification.show("Transaction saved", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             eventHandled = true;
 
@@ -315,7 +315,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
             Notification notification = Notification.show(e.getMessage(), 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         }catch (Exception e) {
-            Notification notification = Notification.show("Se produjo un error intentando realizar la transaccion", 3000, Notification.Position.BOTTOM_CENTER);
+            Notification notification = Notification.show("An error occurred while trying to save the transaction", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 

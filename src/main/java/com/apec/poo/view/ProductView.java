@@ -122,7 +122,7 @@ public class ProductView extends Composite<VerticalLayout> {
         Button cancelButton = createButton();
         cancelButton.addClickListener(e -> {
             clearFields();
-            Notification notification = Notification.show("Operacion cancelada", 3000, Notification.Position.BOTTOM_CENTER);
+            Notification notification = Notification.show("Operation aborted", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
         });
 
@@ -223,7 +223,7 @@ public class ProductView extends Composite<VerticalLayout> {
         try {
             Product product = createProduct();
             productRepository.persist(product);
-            Notification notification = Notification.show("Producto guardado", 3000, Notification.Position.BOTTOM_CENTER);
+            Notification notification = Notification.show("Product saved", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
             // Clearing text fields
@@ -233,7 +233,7 @@ public class ProductView extends Composite<VerticalLayout> {
             Notification notification = Notification.show(e.getMessage(), 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         }catch (Exception e) {
-            Notification notification = Notification.show("Se produjo un error intentando realizar la transaccion", 3000, Notification.Position.BOTTOM_CENTER);
+            Notification notification = Notification.show("An error occurred while trying to save the product", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
@@ -242,7 +242,7 @@ public class ProductView extends Composite<VerticalLayout> {
 
     private void validateFields(Product product) {
         if (product.getName().isBlank() || product.getDescription().isBlank() || product.getStatus() == null || product.getQuantity() <= 0 || product.getPrice().doubleValue() <= 0 || product.getRegistryDate() == null || product.getCode().isBlank() ) {
-            throw new CustomException("Todos los campos son requeridos");}
+            throw new CustomException("All fields are required");}
     }
 
 

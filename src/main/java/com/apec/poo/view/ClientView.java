@@ -25,7 +25,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import java.util.List;
+
 
 
 @PageTitle("Person Form")
@@ -130,15 +130,12 @@ public class ClientView extends Composite<VerticalLayout> {
             clientRepository.persist(client);
             Notification notification = Notification.show("Client saved", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            firstNameField.clear();
-            lastNameField.clear();
-            phoneField.clear();
-            emailField.clear();
+            clearFields();
         }catch (CustomException e){
             Notification notification = Notification.show(e.getMessage(), 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         }catch (Exception e) {
-            Notification notification = Notification.show("An error happened trying to save the client", 3000, Notification.Position.BOTTOM_CENTER);
+            Notification notification = Notification.show("An error occurred while trying to save the client", 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
@@ -169,11 +166,6 @@ public class ClientView extends Composite<VerticalLayout> {
         phoneField.clear();
         emailField.clear();
     }
-
-    private List<Client> getAllClients(){
-        return clientRepository.findAll().list();
-    }
-
 
 
 }

@@ -4,11 +4,13 @@ import com.apec.poo.entities.Transaction;
 import com.apec.poo.repository.TransactionRepository;
 import com.apec.poo.utils.CsvService;
 import com.apec.poo.utils.PdfService;
+import com.apec.poo.utils.Utils;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
@@ -18,10 +20,13 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.server.StreamResource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.core.Response;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 
 
@@ -248,15 +253,15 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
         if (filterText == null || filterText.isEmpty()) {
             filteredTransactions = transactionRepository.findAll().list();
         } else {
-           List<Transaction> transactionList =  transactionRepository.findAll().list();
-           filteredTransactions = transactionList.stream().filter(transaction ->
-                   transaction.getClient().getName().toLowerCase().contains(filterText.toLowerCase()) ||
-                   transaction.getClient().getLastName().toLowerCase().contains(filterText.toLowerCase()) ||
-                   transaction.getProduct().getName().toLowerCase().contains(filterText.toLowerCase()) ||
-                   transaction.getProduct().getCode().toLowerCase().contains(filterText.toLowerCase()) ||
-                   transaction.getProduct().getPrice().toString().toLowerCase().contains(filterText.toLowerCase()) ||
-                   transaction.getQuantityTransaction().toString().toLowerCase().contains(filterText.toLowerCase())
-                   ).toList();
+            List<Transaction> transactionList =  transactionRepository.findAll().list();
+            filteredTransactions = transactionList.stream().filter(transaction ->
+                    transaction.getClient().getName().toLowerCase().contains(filterText.toLowerCase()) ||
+                            transaction.getClient().getLastName().toLowerCase().contains(filterText.toLowerCase()) ||
+                            transaction.getProduct().getName().toLowerCase().contains(filterText.toLowerCase()) ||
+                            transaction.getProduct().getCode().toLowerCase().contains(filterText.toLowerCase()) ||
+                            transaction.getProduct().getPrice().toString().toLowerCase().contains(filterText.toLowerCase()) ||
+                            transaction.getQuantityTransaction().toString().toLowerCase().contains(filterText.toLowerCase())
+            ).toList();
 
         }
         transactionGrid.setItems(filteredTransactions);
@@ -268,15 +273,8 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
         String filePath = "Transaction.csv";
         csvService.generateArrayCsv(filePath, transaction);
         File file = new File(filePath);
-        if (!file.exists()) {
-            Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Unable to create the CSV file").build();
-            return;
-        }
-
         notificationSuccess();
-        Response.ok(file)
-                .header("Content-Disposition", "attachment; filename=\"data.csv\"")
-                .build();
+        downloadFile(file, "csv");
     }
 
     public void generatePdf(List<Transaction> transaction) {
@@ -284,15 +282,23 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
         pdfService.generatePdf(filePath, transaction);
 
         File file = new File(filePath);
-        if (!file.exists()) {
-            Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Unable to create the PDF file").build();
-            return;
-        }
         notificationSuccess();
+        downloadFile(file, "pdf");
+    }
 
-        Response.ok(file)
-                .header("Content-Disposition", "attachment; filename=\"documento.pdf\"")
-                .build();
+    private void downloadFile(File file, String extension) {
+        byte[] bytes;
+        try {
+            bytes = file.exists() ? Files.readAllBytes(file.toPath()) : new byte[0];
+            StreamResource resource = new StreamResource("Transaction." + extension,
+                    () -> new ByteArrayInputStream(bytes));
+            Anchor anchor = new Anchor(resource, "");
+            anchor.getElement().setAttribute("download", true);
+            anchor.getElement().callJsFunction("click");
+            getContent().add(anchor);
+        } catch (IOException e) {
+            Utils.showErrorMessage("An error occurred while trying to download the file");
+        }
     }
 
 

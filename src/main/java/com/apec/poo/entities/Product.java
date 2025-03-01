@@ -65,19 +65,7 @@ public class Product extends AbstractEntity {
         this.registryDate = registryDate;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Product product)) return false;
-        if (!super.equals(o)) return false;
-        return quantity == product.quantity && Objects.equals(name, product.name) && Objects.equals(price, product.price)
-                && Objects.equals(description, product.description) && status == product.status
-                && Objects.equals(registryDate, product.registryDate) && Objects.equals(code, product.code);
-    }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), name, price, quantity, description, status, registryDate, code);
-    }
 
     public String getTransientPrice() {
         return transientPrice;

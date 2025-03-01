@@ -3,6 +3,7 @@ package com.apec.poo.view;
 import com.apec.poo.entities.Product;
 import com.apec.poo.repository.ProductRepository;
 import com.apec.poo.repository.TransactionRepository;
+import com.apec.poo.utils.Utils;
 import com.apec.poo.utils.ValidationMessage;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
@@ -168,21 +169,20 @@ public class ProductGridView extends Composite<VerticalLayout> {
         nameField.setWidthFull();
         binder.forField(nameField)
                 .asRequired("Name must not be empty")
-                .withStatusLabel(firstNameValidationMessage)
+
                 .bind(Product::getName, Product::setName);
         nameColumn.setEditorComponent(nameField);
 
         TextField descriptionField = new TextField();
         descriptionField.setWidthFull();
         binder.forField(descriptionField).asRequired("Description must not be empty")
-                .withStatusLabel(lastNameValidationMessage)
+
                 .bind(Product::getDescription, Product::setDescription);
         descriptionColumn.setEditorComponent(descriptionField);
 
         TextField priceField = new TextField();
         priceField.setWidthFull();
         binder.forField(priceField).asRequired("Price must not be empty")
-                .withStatusLabel(priceValidationMessage)
                 .bind(Product::getTransientPrice, Product::setTransientPrice);
         priceColumn.setEditorComponent(priceField);
 
@@ -231,19 +231,19 @@ public class ProductGridView extends Composite<VerticalLayout> {
         String quantityUpdated = quantityField.getValue();
 
         if (nameUpdated == null || nameUpdated.isEmpty()) {
-            showErrorMessage("Name must not be empty");
+            Utils.showErrorMessage("Name must not be empty");
             return;
         }
         if (descriptionUpdated == null || descriptionUpdated.isEmpty()) {
-            showErrorMessage("Description must not be empty");
+            Utils.showErrorMessage("Description must not be empty");
             return;
         }
         if (priceUpdated == null || priceUpdated.isEmpty()) {
-            showErrorMessage("Price must not be empty");
+            Utils.showErrorMessage("Price must not be empty");
             return;
         }
         if (quantityUpdated == null || quantityUpdated.isEmpty()) {
-            showErrorMessage("Quantity must not be empty");
+            Utils.showErrorMessage("Quantity must not be empty");
             return;
         }
         BigDecimal price;
@@ -252,28 +252,28 @@ public class ProductGridView extends Composite<VerticalLayout> {
         try {
             price = (BigDecimal) decimalFormat.parse(priceUpdated);
         } catch (ParseException e) {
-            showErrorMessage("Invalid price format. Please enter a valid number.");
+            Utils.showErrorMessage("Invalid price format. Please enter a valid number.");
             return;
         }
 
         int quantity = Integer.parseInt(quantityUpdated);
         productRepository.updateProduct(product.getId(), nameUpdated, price, quantity, descriptionUpdated);
-        showInfoMessage("The product has been updated successfully");
+        Utils.showInfoMessage("The product has been updated successfully");
 
     }
 
     private void deleteProduct(Product product) {
         boolean isExistTransaction = transactionRepository.existsTransactionByProduct(product.getId());
         if (isExistTransaction) {
-            showErrorMessage("The product cannot be deleted. Transaction exits");
+            Utils.showErrorMessage("The product cannot be deleted. Transaction exits");
             return;
         }
         try {
             productRepository.deleteProductById(product.getId());
-            showInfoMessage("The product has been deleted successfully");
+            Utils.showInfoMessage("The product has been deleted successfully");
             fillGridWithData();
         } catch (Exception e) {
-            showErrorMessage("Error deleting product");
+            Utils.showErrorMessage("Error deleting product");
         }
 
     }
@@ -288,10 +288,10 @@ public class ProductGridView extends Composite<VerticalLayout> {
             List<Product> productsList = productRepository.findAll().list();
             filteredProducts = productsList.stream()
                     .filter(product -> product.getName().toLowerCase().contains(filterText.toLowerCase())
-                    || product.getDescription().toLowerCase().contains(filterText.toLowerCase())
-                    || product.getPrice().toString().contains(filterText)
-                    || product.getStatus().toString().contains(filterText)
-                    || product.getRegistryDate().toString().contains(filterText)).toList();
+                            || product.getDescription().toLowerCase().contains(filterText.toLowerCase())
+                            || product.getPrice().toString().contains(filterText)
+                            || product.getStatus().toString().contains(filterText)
+                            || product.getRegistryDate().toString().contains(filterText)).toList();
         }
 
         filteredProducts.forEach(Product::loadPrice);
@@ -306,23 +306,6 @@ public class ProductGridView extends Composite<VerticalLayout> {
         productGrid.setItems(products);
     }
 
-    private void showErrorMessage(String message) {
-        showMessage(message, NotificationVariant.LUMO_ERROR);
-    }
-
-    private void showInfoMessage(String message) {
-        showMessage(message, NotificationVariant.LUMO_SUCCESS);
-    }
-
-    private void showWarningMessage(String message) {
-        showMessage(message, NotificationVariant.LUMO_WARNING);
-    }
-
-    private void showMessage(String message, NotificationVariant variant) {
-        Notification notification = new Notification(message, 3000, Notification.Position.TOP_CENTER);
-        notification.addThemeVariants(variant);
-        notification.open();
-    }
 }
 
 
