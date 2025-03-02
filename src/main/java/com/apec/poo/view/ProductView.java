@@ -14,15 +14,12 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
@@ -45,10 +42,10 @@ public class ProductView extends Composite<VerticalLayout> {
     private static final String FULL_WIDTH = "100%";
     private static final String MAX_WIDTH = "800px";
     private static final String MIN_CONTENT = "min-content";
-    private final TextField nameField = createTextField();
+    private final TextField nameField = createNameField();
     private final TextField quantityField = createQuantityField();
     private final TextField productCodeField = createCodeField();
-    private final EmailField descriptionField = new EmailField("Description");
+    private final TextField descriptionField = createDescriptionField();
     private final ComboBox<SampleItem> statusComboBox = createComboBox();
     private final DatePicker registrationDatePicker = createDatePicker();
     private final TextField priceField = createPriceField();
@@ -131,13 +128,24 @@ public class ProductView extends Composite<VerticalLayout> {
         return buttonLayout;
     }
 
-    private TextField createTextField() {
-        return new TextField("Name");
+    private TextField createNameField() {
+
+        TextField name = new TextField("Name");
+        name.setPlaceholder("Enter name");
+        return name;
+    }
+
+    private TextField createDescriptionField() {
+
+        TextField description = new TextField("Description");
+        description.setPlaceholder("Enter description");
+        return description;
     }
 
     private ComboBox<SampleItem> createComboBox() {
         ComboBox<SampleItem> comboBox = new ComboBox<>("Status");
         comboBox.setWidth(MIN_CONTENT);
+        comboBox.setPlaceholder("Select status");
         setComboBoxSampleData(comboBox);
         return comboBox;
     }
@@ -145,6 +153,7 @@ public class ProductView extends Composite<VerticalLayout> {
     private DatePicker createDatePicker() {
         DatePicker datePicker = new DatePicker("Registration Date");
         datePicker.setWidth(MIN_CONTENT);
+        datePicker.setPlaceholder("Select date");
         return datePicker;
     }
 
@@ -187,14 +196,13 @@ public class ProductView extends Composite<VerticalLayout> {
         return button;
     }
 
-    record SampleItem(ProductStatus status, String label, boolean selected) {
+    record SampleItem(ProductStatus status, String label) {
     }
 
     private void setComboBoxSampleData(ComboBox<SampleItem> comboBox) {
-
         List<SampleItem> productStatus = new ArrayList<>();
-        productStatus.add(new SampleItem(ProductStatus.AVAILABLE, "Available Product", false));
-        productStatus.add(new SampleItem(ProductStatus.UNAVAILABLE, "Unavailable Product", false));
+        productStatus.add(new SampleItem(ProductStatus.AVAILABLE, "Available Product"));
+        productStatus.add(new SampleItem(ProductStatus.UNAVAILABLE, "Unavailable Product"));
         comboBox.setItems(productStatus);
         comboBox.setItemLabelGenerator(SampleItem::label);
 
@@ -238,6 +246,7 @@ public class ProductView extends Composite<VerticalLayout> {
     }
 
 
+
     private boolean isFieldsInvalid() {
         Map<String, Object> fields = new HashMap<>();
         fields.put("name", nameField.getValue());
@@ -268,7 +277,7 @@ public class ProductView extends Composite<VerticalLayout> {
         statusComboBox.clear();
         registrationDatePicker.clear();
         priceField.clear();
-        quantityField.clear();
+        quantityField.setValue("1");
         productCodeField.clear();
     }
 

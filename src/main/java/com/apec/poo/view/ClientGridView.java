@@ -81,7 +81,7 @@ public class ClientGridView extends Composite<VerticalLayout> {
     private HorizontalLayout createDivForTitleandFilter(){
         HorizontalLayout divLayout = new HorizontalLayout();
         divLayout.setWidthFull();
-        divLayout.add(new H3("Product Information"), createFilterField());
+        divLayout.add(new H3("Client Information"), createFilterField());
         divLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
         return divLayout;
     }
@@ -107,7 +107,7 @@ public class ClientGridView extends Composite<VerticalLayout> {
         Grid.Column<Client> lastNameColumn = grid
                 .addColumn(Client::getLastName)
                 .setHeader("Last name")
-                .setWidth(WIDTH)
+                .setWidth("160px")
                 .setFlexGrow(0);
         Grid.Column<Client> emailColumn = grid
                 .addColumn(Client::getEmail)
@@ -115,7 +115,7 @@ public class ClientGridView extends Composite<VerticalLayout> {
                 .setHeader("Email");
         Grid.Column<Client> phoneColumn = grid
                 .addColumn(Client::getPhoneNumber)
-                .setWidth(WIDTH)
+                .setWidth("100px")
                 .setHeader("Phone");
 
         Grid.Column<Client> editColumn = grid.addComponentColumn(client -> {
@@ -238,6 +238,12 @@ public class ClientGridView extends Composite<VerticalLayout> {
             Utils.showErrorMessage("Client phone number must not be empty");
             return;
         }
+        if(!emailUpdated.matches("^[A-Za-z0-9+_.-]+@(.+)$")){
+            Utils.showErrorMessage("Client email must be a valid email");
+            return;
+        }
+
+
 
         clientRepository.updateClient(client, clientNameUpdated, lastNameUpdated, emailUpdated, phoneUpdated);
         Utils.showInfoMessage("Client updated successfully");
@@ -281,8 +287,8 @@ public class ClientGridView extends Composite<VerticalLayout> {
             fillGridWithData();
             Utils.showInfoMessage("Client deleted successfully");
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error to try to delete the client", e);
-            Utils.showErrorMessage("Error to try to delete the client");
+            LOGGER.log(Level.SEVERE, "Error trying to delete the client", e);
+            Utils.showErrorMessage("Error trying delete the client");
         }
 
     }

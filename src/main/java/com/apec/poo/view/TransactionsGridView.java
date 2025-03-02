@@ -272,16 +272,15 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
         String filePath = "Transaction.csv";
         csvService.generateArrayCsv(filePath, transaction);
         File file = new File(filePath);
-        notificationSuccess();
+        Utils.showInfoMessage("File generated successfully");
         downloadFile(file, "csv");
     }
 
     public void generatePdf(List<Transaction> transaction) {
         String filePath = "Transaction.pdf";
         pdfService.generatePdf(filePath, transaction);
-
         File file = new File(filePath);
-        notificationSuccess();
+        Utils.showInfoMessage("File generated successfully");
         downloadFile(file, "pdf");
     }
 
@@ -299,12 +298,5 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
             Utils.showErrorMessage("An error occurred while trying to download the file");
         }
     }
-
-
-    private void notificationSuccess(){
-        Notification notification = Notification.show("File generated successfully", 3000, Notification.Position.BOTTOM_CENTER);
-        notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-    }
-
 
 }

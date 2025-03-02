@@ -65,16 +65,16 @@ public class PdfService {
             document.add(table);
             document.close();
 
-            return "Archivo PDF generado en: " + filePath;
+            return "The PDF file has been generated in: " + filePath;
         } catch (DocumentException | IOException e) {
             e.printStackTrace();
-            return "Error al generar el archivo PDF.";
+            return "Error trying to generate the PDF file.";
         }
     }
 
 
 
-    // Método para crear celdas en NEGRITA (Encabezados)
+
     private PdfPCell getHeaderCell(String text) {
         Font boldFont = new Font(Font.HELVETICA, 16, Font.BOLD);
         PdfPCell cell = new PdfPCell(new Phrase(text, boldFont));
@@ -84,7 +84,7 @@ public class PdfService {
         return cell;
     }
 
-    // Método para crear celdas normales (Contenido)
+
     private PdfPCell getContentCell(String text) {
         PdfPCell cell = new PdfPCell(new Phrase(text, new Font(Font.HELVETICA, 15)));
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);

@@ -271,7 +271,7 @@ public class ProductGridView extends Composite<VerticalLayout> {
             Utils.showInfoMessage("The product has been deleted successfully");
             fillGridWithData();
         } catch (Exception e) {
-            Utils.showErrorMessage("Error deleting product");
+            Utils.showErrorMessage("Error deleting the product");
         }
 
     }

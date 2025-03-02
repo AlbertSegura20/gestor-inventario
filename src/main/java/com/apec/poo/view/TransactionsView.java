@@ -60,7 +60,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
     private final NumberField totalQuantityField = createTotalQuantityField();
     private final TextField registrationDateField = createRegistrationDateField();
     private final ComboBox<Product> productNameComboBox = new ComboBox<>("Product name");
-    private final DatePicker transactionDatePicker = new DatePicker("Transaction date");
+    private final DatePicker transactionDatePicker = createDatePicker();
     private boolean eventHandled = false;
     private final NumberField priceField = createPriceField();
     Tab tab1 = new Tab("Register transaction");
@@ -134,6 +134,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
     private NumberField createQuantityField() {
         NumberField quantity = new NumberField("Quantity");
         quantity.setWidth(MIN_CONTENT);
+        quantity.setValue(0.0);
         quantity.setReadOnly(true);
         return quantity;
     }
@@ -153,8 +154,16 @@ public class TransactionsView extends Composite<VerticalLayout> {
     private TextField createCodeField() {
         TextField codeField = new TextField("Product code");
         codeField.setWidth(MIN_CONTENT);
+        codeField.setValue("xxxx-xxxx-xxxx");
         codeField.setReadOnly(true);
         return codeField;
+    }
+
+    private DatePicker createDatePicker() {
+        DatePicker datePicker = new DatePicker("Registration date");
+        datePicker.setWidth(MIN_CONTENT);
+        datePicker.setPlaceholder("Select a date");
+        return datePicker;
     }
 
 
@@ -209,6 +218,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
     private TextField createRegistrationDateField() {
         TextField registrationDate = new TextField("Registration date");
         registrationDate.setWidth(MIN_CONTENT);
+        registrationDate.setValue("yyyy-MM-dd");
         registrationDate.setReadOnly(true);
         return registrationDate;
     }
@@ -241,6 +251,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
     private void setComboBoxClientData(ComboBox<Client> comboBox) {
          List<Client> clientItems = getClientInformation();
          comboBox.setItems(clientItems);
+         comboBox.setPlaceholder("Select a client");
          comboBox.setItemLabelGenerator(item -> item.getName() + " " + item.getLastName());
     }
 
@@ -251,6 +262,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
 
     private void setComboBoxProductData(ComboBox<Product> comboBox) {
         List<Product> productItems = getProductInformation();
+        comboBox.setPlaceholder("Select a product");
         comboBox.setItems(productItems.stream().filter(item -> item.getStatus() == ProductStatus.AVAILABLE).toList());
         comboBox.setItemLabelGenerator(Product::getName);
 
@@ -362,12 +374,12 @@ public class TransactionsView extends Composite<VerticalLayout> {
 
     private void clearFields(){
         transactionDatePicker.clear();
-        registrationDateField.clear();
+        registrationDateField.setValue("yyyy-MM-dd");
         totalPriceField.clear();
-        productCodeField.clear();
-        quantityField.clear();
-        priceField.clear();
-        totalQuantityField.clear();
+        productCodeField.setValue("xxxx-xxxx-xxxx");
+        quantityField.setValue(0.0);
+        priceField.setValue(0.0);
+        totalQuantityField.setValue(0.0);
 
         // Clearing date picker
         clientNameComboBox.clear();

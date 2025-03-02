@@ -18,7 +18,7 @@ public class Utils {
     }
 
     public static void showContrastMessage(String message) {
-        showMessage(message, NotificationVariant.LUMO_WARNING);
+        showMessage(message, NotificationVariant.LUMO_CONTRAST);
     }
 
     public static void showMessage(String message, NotificationVariant variant) {

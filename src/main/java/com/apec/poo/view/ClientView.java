@@ -34,10 +34,10 @@ public class ClientView extends Composite<VerticalLayout> {
 
 
     private final ClientRepository clientRepository;
-    TextField firstNameField = new TextField("First Name");
-    TextField lastNameField = new TextField("Last Name");
+    TextField firstNameField = createNameField();
+    TextField lastNameField = createLastNameField();
     TextField phoneField = new TextField("Phone Number");
-    EmailField emailField = new EmailField("Email");
+    EmailField emailField = createEmailField();
     private static final String FULL_WIDTH = "100%";
     private static final String MAX_WIDTH = "800px";
     private static final String MIN_CONTENT = "min-content";
@@ -68,7 +68,8 @@ public class ClientView extends Composite<VerticalLayout> {
         content.add(tabs);
         mainLayout.add(new H3("Client Information"), formLayout, buttonLayout);
         getContent().add(content);
-
+//        setPhoneNumberMask();
+        PhoneNumberMaskView();
 
     }
 
@@ -116,6 +117,27 @@ public class ClientView extends Composite<VerticalLayout> {
         return buttonLayout;
     }
 
+    private TextField createNameField() {
+        TextField clientName = new TextField("First Name");
+        clientName.setPlaceholder("John");
+        return clientName;
+
+    }
+    private TextField createLastNameField() {
+        TextField clientName = new TextField("Last Name");
+        clientName.setPlaceholder("Doe");
+        return clientName;
+
+    }
+
+
+        private EmailField createEmailField() {
+        EmailField emailCField = new EmailField("Email");
+        emailCField.setPlaceholder("Example@gmail.com");
+        return emailCField;
+
+    }
+
 
     @Transactional
     public void saveClient(){
@@ -133,6 +155,52 @@ public class ClientView extends Composite<VerticalLayout> {
 
     }
 
+    private void setPhoneNumberMask(){
+        phoneField.setPlaceholder("+123-456-7890");
+
+        phoneField.addValueChangeListener(event -> {
+            String value = event.getValue();
+            if (!value.matches("\\+?\\d{0,3}-?\\d{0,3}-?\\d{0,4}")) {
+                phoneField.setValue(""); // Clear input if invalid
+                phoneField.setErrorMessage("Invalid phone number format");
+            }
+        });
+
+    }
+
+
+    public void PhoneNumberMaskView() {
+
+        // Set placeholder to show expected format
+        phoneField.setPlaceholder("+123-456-7890");
+
+
+
+        // Add a listener to apply the mask as the user types
+        phoneField.addBlurListener( e -> {
+            String rawValue = phoneField.getValue().replaceAll("[^0-9]", ""); // Remove all non-numeric characters
+            StringBuilder maskedValue = new StringBuilder();
+
+            // Apply the masking logic
+            if (!rawValue.isEmpty()) {
+                for (int i = 0; i < rawValue.length(); i++) {
+                    if (i == 3 || i == 6) {
+                        maskedValue.append("-");
+                    }
+                    maskedValue.append(rawValue.charAt(i));
+                }
+            }
+
+            // Update the text field value with the masked format
+            phoneField.setValue(maskedValue.toString());
+        }); // Add debounce to prevent excessive calls
+
+        // Add the phone field to the layout
+
+    }
+
+
+
 
     private Client createClient() {
         Client client = new Client();
@@ -149,6 +217,10 @@ public class ClientView extends Composite<VerticalLayout> {
     private void validateClient(Client client){
         if(client.getName().isEmpty() || client.getLastName().isEmpty() || client.getPhoneNumber().isEmpty() || client.getEmail().isEmpty()){
             throw new CustomException("All fields are required");
+        }
+        if(!client.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")){
+            throw new CustomException("Client email must be a valid email");
+
         }
     }
 
