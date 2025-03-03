@@ -14,6 +14,7 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -27,6 +28,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -34,7 +36,7 @@ import java.util.*;
 
 @PageTitle("Product")
 @Route("product")
-@Menu(order = 1)
+@Menu(order = 1,title = "Product", icon = LineAwesomeIconUrl.BOX_OPEN_SOLID)
 public class ProductView extends Composite<VerticalLayout> {
 
 
@@ -114,6 +116,7 @@ public class ProductView extends Composite<VerticalLayout> {
         buttonLayout.getStyle().set("flex-grow", "1");
 
         Button saveButton = createPrimaryButton();
+        saveButton.setWidth(MIN_CONTENT);
         saveButton.addClickListener(e -> saveProduct());
 
         Button cancelButton = createButton();
@@ -184,14 +187,15 @@ public class ProductView extends Composite<VerticalLayout> {
     }
 
     private Button createPrimaryButton() {
-        Button button = new Button("Save");
+        Button button = new Button("Save", new Icon("vaadin", "check"));
         button.setWidth(MIN_CONTENT);
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         return button;
     }
 
     private Button createButton() {
-        Button button = new Button("Cancel");
+        Button button = new Button("Cancel", new Icon("vaadin", "close"));
+        button.addThemeVariants(ButtonVariant.LUMO_ERROR);
         button.setWidth(MIN_CONTENT);
         return button;
     }

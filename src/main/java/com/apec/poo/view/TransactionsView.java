@@ -19,6 +19,7 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
@@ -35,6 +36,8 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.vaadin.lineawesome.LineAwesomeIconUrl;
+
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +46,7 @@ import java.util.Map;
 
 @PageTitle("Transactions")
 @Route("transactions")
-@Menu(order = 2)
+@Menu(order = 2, title = "Transactions", icon = LineAwesomeIconUrl.CREDIT_CARD_SOLID)
 public class TransactionsView extends Composite<VerticalLayout> {
 
 
@@ -198,11 +201,13 @@ public class TransactionsView extends Composite<VerticalLayout> {
 
                 if(!eventHandled){
 
-                    if(e.getValue() < 0.0){
-                        Utils.showErrorMessage("The amount must be greater than 0");
+                    if(e.getValue() < 0.0 || e.getValue() == 0){
+                        Utils.showWarningMessage("The amount must be greater than 0");
+                        return;
                     }
                     if(e.getValue() > quantityField.getValue()){
-                        Utils.showErrorMessage("The amount must be less than or equal to the quantity available");
+                        Utils.showWarningMessage("The amount must be less than or equal to the quantity available");
+                        return;
                     }
 
                 }
@@ -229,13 +234,14 @@ public class TransactionsView extends Composite<VerticalLayout> {
         buttonLayout.setWidth(FULL_WIDTH);
         buttonLayout.getStyle().set("flex-grow", "1");
 
-        Button saveButton = new Button("Save");
+        Button saveButton = new Button("Save", new Icon("vaadin", "check"));
         saveButton.setWidth(MIN_CONTENT);
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         saveButton.addClickListener(e -> saveTransaction());
 
-        Button cancelButton = new Button("Cancel");
+        Button cancelButton = new Button("Cancel", new Icon("vaadin", "close"));
+        cancelButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
 
         cancelButton.addClickListener(e -> {
             clearFields();
@@ -346,8 +352,6 @@ public class TransactionsView extends Composite<VerticalLayout> {
            Utils.showErrorMessage("An error occurred while saving the transaction");
         }
 
-        eventHandled = false;
-
     }
 
     private boolean isValidateFields(){
@@ -366,6 +370,13 @@ public class TransactionsView extends Composite<VerticalLayout> {
             }
 
         }
+        if(totalQuantityField.getValue() == 0.0 || totalQuantityField.getValue() < 0.0){
+            Utils.showErrorMessage("Error in the quantity field, it must be greater than 0");
+            return true;
+        }
+
+
+
         return false;
 
 

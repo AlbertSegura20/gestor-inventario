@@ -10,6 +10,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -24,12 +25,13 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 
 
-@PageTitle("Person Form")
+@PageTitle("Client")
 @Route("client")
-@Menu(order = 0, title = "Client")
+@Menu(order = 0, title = "Client", icon = LineAwesomeIconUrl.USER)
 public class ClientView extends Composite<VerticalLayout> {
 
 
@@ -100,12 +102,13 @@ public class ClientView extends Composite<VerticalLayout> {
         buttonLayout.setWidth(FULL_WIDTH);
         buttonLayout.getStyle().set("flex-grow", "1");
 
-        Button saveButton = new Button("Save");
+        Button saveButton = new Button("Save", new Icon("vaadin", "check"));
         saveButton.setWidth(MIN_CONTENT);
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         saveButton.addClickListener(e -> saveClient());
 
-        Button cancelButton = new Button("Cancel");
+        Button cancelButton = new Button("Cancel", new Icon("vaadin", "close"));
+        cancelButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
         cancelButton.addClickListener(e -> {
             clearFields();
             Utils.showContrastMessage("Operation aborted");

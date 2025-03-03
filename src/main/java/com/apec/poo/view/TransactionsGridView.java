@@ -128,7 +128,7 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
                 .setWidth(WIDTH);
         grid.addColumn(transaction -> transaction.getProduct().getQuantity())
                 .setHeader("Quantity available")
-                .setWidth(WIDTH_100)
+                .setWidth("150px")
                 .setFlexGrow(0);
         grid.addColumn(transaction -> transaction.getProduct().getRegistryDate())
                 .setHeader("Registration date")
