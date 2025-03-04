@@ -193,11 +193,14 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
                 if(isChecked){
                     selectedTransactions.add(allTransactions.stream().filter(t ->
                             t.getId().equals(id)).findFirst().get());
-                    confirmFileTypeTransaction(selectedTransactions);
-                }else{
-                    Utils.showErrorMessage("Please, select at least one transaction");
                 }
             });
+
+            if(!selectedTransactions.isEmpty()){
+                confirmFileTypeTransaction(selectedTransactions);
+            }else{
+                Utils.showErrorMessage("Please, select at least one transaction");
+            }
 
         }else{
             Utils.showErrorMessage("Please, select at least one transaction");
@@ -231,8 +234,6 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
         dialog.addRejectListener(event -> generatePdf(selectedTransactions));
         dialog.addConfirmListener(event -> generateCsv(selectedTransactions));
 
-        Button button = new Button("Open confirm dialog");
-        button.addClickListener(event -> dialog.open());
         dialog.open();
 
     }

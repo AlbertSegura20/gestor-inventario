@@ -18,6 +18,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.converter.StringToIntegerConverter;
@@ -180,7 +181,7 @@ public class ProductGridView extends ProductViewAbstract {
                 .bind(Product::getDescription, Product::setDescription);
         descriptionColumn.setEditorComponent(descriptionField);
 
-        TextField priceField = createPriceField();
+        NumberField priceField = createPriceField();
         priceField.setWidthFull();
         priceField.setLabel("");
         binder.forField(priceField).asRequired("Price must not be empty")
@@ -229,17 +230,17 @@ public class ProductGridView extends ProductViewAbstract {
         return grid;
     }
 
-    public boolean updateProduct(Product product, TextField nameField, TextField descriptionField, TextField priceField,
+    public boolean updateProduct(Product product, TextField nameField, TextField descriptionField, NumberField priceField,
                                  TextField quantityField) {
         String nameUpdated = nameField.getValue();
         String descriptionUpdated = descriptionField.getValue();
-        String priceUpdated = priceField.getValue();
+        Double priceUpdated = priceField.getValue();
         String quantityUpdated = quantityField.getValue();
 
         Map<String, String> fieldsValidation = new HashMap<>();
         fieldsValidation.put("Name field", nameUpdated);
         fieldsValidation.put("Description field", descriptionUpdated);
-        fieldsValidation.put("Price field", priceUpdated);
+        fieldsValidation.put("Price field", String.valueOf(priceUpdated));
         fieldsValidation.put("Quantity field", quantityUpdated);
 
         for (Map.Entry<String, String> entry : fieldsValidation.entrySet()) {
@@ -259,7 +260,7 @@ public class ProductGridView extends ProductViewAbstract {
             Utils.showErrorMessage("Description must not be empty");
             return false;
         }
-        if (priceUpdated == null || priceUpdated.isBlank()) {
+        if (priceUpdated == null || priceUpdated == 0.0) {
             Utils.showErrorMessage("Price must not be empty");
             return false;
         }
@@ -271,7 +272,7 @@ public class ProductGridView extends ProductViewAbstract {
         DecimalFormat decimalFormat = (DecimalFormat) NumberFormat.getInstance(Locale.US);
         decimalFormat.setParseBigDecimal(true);
         try {
-            price = (BigDecimal) decimalFormat.parse(priceUpdated);
+            price = (BigDecimal) decimalFormat.parse(String.valueOf(priceUpdated));
         } catch (ParseException e) {
             Utils.showErrorMessage("Invalid price format. Please enter a valid number.");
             return false;

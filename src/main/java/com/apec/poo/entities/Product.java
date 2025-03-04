@@ -18,7 +18,7 @@ public class Product extends AbstractEntity {
     private LocalDate registryDate;
     private String code;
     @Transient
-    private String transientPrice;
+    private Double transientPrice;
 
     public String getCode() {
         return code;
@@ -38,7 +38,7 @@ public class Product extends AbstractEntity {
     }
     public void setPrice(BigDecimal price) {
         this.price = price;
-        transientPrice = price.toString();
+        transientPrice = Double.valueOf(price.toString());
     }
     public int getQuantity() {
         return quantity;
@@ -67,17 +67,17 @@ public class Product extends AbstractEntity {
 
 
 
-    public String getTransientPrice() {
+    public Double getTransientPrice() {
         return transientPrice;
     }
 
-    public void setTransientPrice(String transientPrice) {
+    public void setTransientPrice(Double transientPrice) {
         this.transientPrice = transientPrice;
     }
 
     public void loadPrice(){
         if(price != null){
-            transientPrice = price.toString();
+            transientPrice = Double.valueOf(price.toString());
         }
     }
 }

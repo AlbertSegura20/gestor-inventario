@@ -4,6 +4,7 @@ import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 
 public class ProductViewAbstract extends Composite<VerticalLayout> {
@@ -48,14 +49,14 @@ public class ProductViewAbstract extends Composite<VerticalLayout> {
         return quantity;
     }
 
-    public TextField createPriceField() {
-        TextField price = new TextField("Price");
+    public NumberField createPriceField() {
+        NumberField price = new NumberField("Price");
         price.setWidth(MIN_CONTENT);
         price.setPlaceholder("0");
         Div dollarPrefix = new Div();
         dollarPrefix.setText("$");
         price.setPrefixComponent(dollarPrefix);
-        price.addValueChangeListener(e -> textFieldValidationListener(e, price, "Invalid price."));
+//        price.addValueChangeListener(e -> textFieldValidationListener(e, price, "Invalid price."));
         price.setRequired(true);
         price.setRequiredIndicatorVisible(true);
         return price;
@@ -71,4 +72,16 @@ public class ProductViewAbstract extends Composite<VerticalLayout> {
             nameField.setInvalid(false);
         }
     }
+
+    public void textFieldValidationListener(AbstractField.ComponentValueChangeEvent<NumberField, String> event,
+                                            NumberField nameField, String errorMessage){
+        String value = event.getValue();
+        if (value != null && value.matches("^[\\p{Punct}\\s]*$")) {
+            nameField.setInvalid(true);
+            nameField.setErrorMessage(errorMessage);
+        } else {
+            nameField.setInvalid(false);
+        }
+    }
 }
+

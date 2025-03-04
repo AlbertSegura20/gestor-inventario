@@ -19,6 +19,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
@@ -46,9 +47,9 @@ public class ProductView extends ProductViewAbstract {
     private final TextField quantityField = createQuantityField();
     private final TextField productCodeField = createCodeField();
     private final TextField descriptionField = createDescriptionField();
-    private final ComboBox<SampleItem> statusComboBox = createComboBox();
+    private final ComboBox<ProductStatus> statusComboBox = createcomboBox();
     private final DatePicker registrationDatePicker = createDatePicker();
-    private final TextField priceField = createPriceField();
+    private final NumberField priceField = createPriceField();
     Tab tab1 = new Tab("Register product");
     Tab tab2 = new Tab("All products");
     TabSheet tabs = new TabSheet();
@@ -129,15 +130,18 @@ public class ProductView extends ProductViewAbstract {
         return buttonLayout;
     }
 
-    private ComboBox<SampleItem> createComboBox() {
-        ComboBox<SampleItem> comboBox = new ComboBox<>("Status");
+
+    private ComboBox<ProductStatus> createcomboBox() {
+        ComboBox<ProductStatus> comboBox = new ComboBox<>("Status");
         comboBox.setWidth(MIN_CONTENT);
         comboBox.setPlaceholder("Select status");
         comboBox.setRequired(true);
         comboBox.setRequiredIndicatorVisible(true);
-        setComboBoxSampleData(comboBox);
+        setComboBoxProductStatus(comboBox);
+
         return comboBox;
     }
+
 
     private DatePicker createDatePicker() {
         DatePicker datePicker = new DatePicker("Registration Date");
@@ -164,16 +168,14 @@ public class ProductView extends ProductViewAbstract {
         return button;
     }
 
-    record SampleItem(ProductStatus status, String label) {
-    }
 
-    private void setComboBoxSampleData(ComboBox<SampleItem> comboBox) {
-        List<SampleItem> productStatus = new ArrayList<>();
-        productStatus.add(new SampleItem(ProductStatus.AVAILABLE, "Available Product"));
-        productStatus.add(new SampleItem(ProductStatus.UNAVAILABLE, "Unavailable Product"));
+    private void setComboBoxProductStatus(ComboBox<ProductStatus> comboBox){
+        List<ProductStatus> productStatus = new ArrayList<>();
+        productStatus.add(ProductStatus.AVAILABLE);
+        productStatus.add(ProductStatus.UNAVAILABLE);
+
         comboBox.setItems(productStatus);
-        comboBox.setItemLabelGenerator(SampleItem::label);
-
+        comboBox.setItemLabelGenerator(ProductStatus::name);
     }
 
 
@@ -181,9 +183,9 @@ public class ProductView extends ProductViewAbstract {
         Product product = new Product();
         product.setName(nameField.getValue());
         product.setDescription(descriptionField.getValue());
-        product.setStatus(statusComboBox.getValue().status);
+        product.setStatus(statusComboBox.getValue());
         product.setQuantity(Integer.parseInt(quantityField.getValue()));
-        product.setPrice(BigDecimal.valueOf(Double.parseDouble(priceField.getValue())));
+        product.setPrice(BigDecimal.valueOf(priceField.getValue()));
         product.setRegistryDate(registrationDatePicker.getValue());
         product.setCode(productCodeField.getValue());
 

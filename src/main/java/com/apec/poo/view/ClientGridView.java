@@ -1,6 +1,5 @@
 package com.apec.poo.view;
 
-import com.apec.poo.entities.AbstractEntity;
 import com.apec.poo.entities.Client;
 import com.apec.poo.repository.ClientRepository;
 import com.apec.poo.repository.TransactionRepository;
