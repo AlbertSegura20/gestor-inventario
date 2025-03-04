@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 public class Transaction extends AbstractEntity {
@@ -66,5 +67,19 @@ public class Transaction extends AbstractEntity {
 
     public void setQuantityTransaction(Double quantityTransaction) {
         this.quantityTransaction = quantityTransaction;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Transaction that)) return false;
+        if (!super.equals(o)) return false;
+        return Objects.equals(client, that.client) && status == that.status && Objects.equals(product, that.product)
+                && Objects.equals(transactionDate, that.transactionDate) && Objects.equals(totalPrice, that.totalPrice)
+                && Objects.equals(quantityTransaction, that.quantityTransaction);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), client, status, product, transactionDate, totalPrice, quantityTransaction);
     }
 }

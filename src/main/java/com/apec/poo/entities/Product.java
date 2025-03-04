@@ -3,6 +3,7 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Objects;
 
 @Entity
 public class Product extends AbstractEntity {
@@ -16,6 +17,8 @@ public class Product extends AbstractEntity {
     private ProductStatus status;
     private LocalDate registryDate;
     private String code;
+    @Transient
+    private String transientPrice;
 
     public String getCode() {
         return code;
@@ -29,11 +32,13 @@ public class Product extends AbstractEntity {
     public void setName(String name) {
         this.name = name;
     }
+
     public BigDecimal getPrice() {
         return price;
     }
     public void setPrice(BigDecimal price) {
         this.price = price;
+        transientPrice = price.toString();
     }
     public int getQuantity() {
         return quantity;
@@ -61,4 +66,18 @@ public class Product extends AbstractEntity {
     }
 
 
+
+    public String getTransientPrice() {
+        return transientPrice;
+    }
+
+    public void setTransientPrice(String transientPrice) {
+        this.transientPrice = transientPrice;
+    }
+
+    public void loadPrice(){
+        if(price != null){
+            transientPrice = price.toString();
+        }
+    }
 }

@@ -3,7 +3,6 @@ package com.apec.poo.repository;
 import com.apec.poo.entities.Product;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.Path;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Query;
 
@@ -12,8 +11,12 @@ import java.util.List;
 @GraphQLApi
 public class GetProductGraphQL {
 
+    private final ProductRepository productRepository;
+
     @Inject
-    ProductRepository productRepository;
+   public GetProductGraphQL(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
 
     @Query("getProduct")
     @Transactional

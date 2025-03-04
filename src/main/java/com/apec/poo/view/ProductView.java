@@ -3,24 +3,22 @@ package com.apec.poo.view;
 import com.apec.poo.entities.Product;
 import com.apec.poo.entities.ProductStatus;
 import com.apec.poo.repository.ProductRepository;
+import com.apec.poo.repository.TransactionRepository;
 import com.apec.poo.utils.CustomException;
-import com.vaadin.flow.component.Composite;
+import com.apec.poo.utils.Utils;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
@@ -28,26 +26,26 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 
 @PageTitle("Product")
 @Route("product")
-@Menu(order = 1)
-public class ProductView extends Composite<VerticalLayout> {
+@Menu(order = 1,title = "Products", icon = LineAwesomeIconUrl.BOX_OPEN_SOLID)
+public class ProductView extends ProductViewAbstract {
 
 
     private final ProductRepository productRepository;
     private static final String FULL_WIDTH = "100%";
     private static final String MAX_WIDTH = "800px";
     private static final String MIN_CONTENT = "min-content";
-    private final TextField nameField = createTextField();
+    private final TextField nameField = createNameField();
     private final TextField quantityField = createQuantityField();
     private final TextField productCodeField = createCodeField();
-    private final EmailField descriptionField = new EmailField("Description");
+    private final TextField descriptionField = createDescriptionField();
     private final ComboBox<SampleItem> statusComboBox = createComboBox();
     private final DatePicker registrationDatePicker = createDatePicker();
     private final TextField priceField = createPriceField();
@@ -57,14 +55,22 @@ public class ProductView extends Composite<VerticalLayout> {
 
 
     @Inject
-    public ProductView(ProductRepository productRepository) {
+    public ProductView(ProductRepository productRepository, TransactionRepository transactionRepository) {
         this.productRepository = productRepository;
         configureContent(getContent());
         VerticalLayout mainLayout = createMainLayout();
         VerticalLayout content = new VerticalLayout();
+        ProductGridView productGridView = new ProductGridView(productRepository, transactionRepository);
         tabs.setWidth(FULL_WIDTH);
         tabs.add(tab1, mainLayout);
-        tabs.add(tab2, new ProductGridView(productRepository));
+        tabs.add(tab2, productGridView);
+
+        tabs.addSelectedChangeListener(event -> {
+            if (tabs.getSelectedTab().equals(tab2)){
+                productGridView.fillGridWithData();
+            }
+        });
+
         content.add(tabs);
         getContent().add(content);
         mainLayout.add(createHeader(), createForm(), saveButtonLayout());
@@ -108,13 +114,13 @@ public class ProductView extends Composite<VerticalLayout> {
         buttonLayout.getStyle().set("flex-grow", "1");
 
         Button saveButton = createPrimaryButton();
+        saveButton.setWidth(MIN_CONTENT);
         saveButton.addClickListener(e -> saveProduct());
 
         Button cancelButton = createButton();
         cancelButton.addClickListener(e -> {
             clearFields();
-            Notification notification = Notification.show("Operacion cancelada", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+            Utils.showContrastMessage("Operation aborted");
         });
 
 
@@ -123,13 +129,12 @@ public class ProductView extends Composite<VerticalLayout> {
         return buttonLayout;
     }
 
-    private TextField createTextField() {
-        return new TextField("Name");
-    }
-
     private ComboBox<SampleItem> createComboBox() {
         ComboBox<SampleItem> comboBox = new ComboBox<>("Status");
         comboBox.setWidth(MIN_CONTENT);
+        comboBox.setPlaceholder("Select status");
+        comboBox.setRequired(true);
+        comboBox.setRequiredIndicatorVisible(true);
         setComboBoxSampleData(comboBox);
         return comboBox;
     }
@@ -137,56 +142,35 @@ public class ProductView extends Composite<VerticalLayout> {
     private DatePicker createDatePicker() {
         DatePicker datePicker = new DatePicker("Registration Date");
         datePicker.setWidth(MIN_CONTENT);
+        datePicker.setPlaceholder("Select date");
+        datePicker.setRequired(true);
+        datePicker.setRequiredIndicatorVisible(true);
         return datePicker;
     }
 
 
-    private TextField createQuantityField() {
-        TextField quantity = new TextField("Quantity");
-        quantity.setWidth(MIN_CONTENT);
-        quantity.setValue("1");
-        return quantity;
-    }
-
-
-    private TextField createPriceField() {
-        TextField price = new TextField("Price");
-        price.setWidth(MIN_CONTENT);
-        price.setPlaceholder("0");
-        Div dollarPrefix = new Div();
-        dollarPrefix.setText("$");
-        price.setPrefixComponent(dollarPrefix);
-        return price;
-    }
-
-    private TextField createCodeField() {
-        TextField codeField = new TextField("Product code");
-        codeField.setWidth(MIN_CONTENT);
-        codeField.setPlaceholder("xxxx-xxxx-xxxx");
-        return codeField;
-    }
 
     private Button createPrimaryButton() {
-        Button button = new Button("Save");
+        Button button = new Button("Save", new Icon("vaadin", "check"));
         button.setWidth(MIN_CONTENT);
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         return button;
     }
 
     private Button createButton() {
-        Button button = new Button("Cancel");
+        Button button = new Button("Cancel", new Icon("vaadin", "close"));
+        button.addThemeVariants(ButtonVariant.LUMO_ERROR);
         button.setWidth(MIN_CONTENT);
         return button;
     }
 
-    record SampleItem(ProductStatus status, String label, boolean selected) {
+    record SampleItem(ProductStatus status, String label) {
     }
 
     private void setComboBoxSampleData(ComboBox<SampleItem> comboBox) {
-
         List<SampleItem> productStatus = new ArrayList<>();
-        productStatus.add(new SampleItem(ProductStatus.AVAILABLE, "Available Product", false));
-        productStatus.add(new SampleItem(ProductStatus.UNAVAILABLE, "Unavailable Product", false));
+        productStatus.add(new SampleItem(ProductStatus.AVAILABLE, "Available Product"));
+        productStatus.add(new SampleItem(ProductStatus.UNAVAILABLE, "Unavailable Product"));
         comboBox.setItems(productStatus);
         comboBox.setItemLabelGenerator(SampleItem::label);
 
@@ -202,7 +186,6 @@ public class ProductView extends Composite<VerticalLayout> {
         product.setPrice(BigDecimal.valueOf(Double.parseDouble(priceField.getValue())));
         product.setRegistryDate(registrationDatePicker.getValue());
         product.setCode(productCodeField.getValue());
-        validateFields(product);
 
         return product;
 
@@ -212,40 +195,83 @@ public class ProductView extends Composite<VerticalLayout> {
     @Transactional
     public void saveProduct(){
         try {
+            if(isFieldsInvalid()){
+                return;
+            }
             Product product = createProduct();
             productRepository.persist(product);
-            Notification notification = Notification.show("Producto guardado", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            Utils.showInfoMessage("Product saved");
 
             // Clearing text fields
             clearFields();
 
         }catch (CustomException e){
-            Notification notification = Notification.show(e.getMessage(), 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Utils.showErrorMessage(e.getMessage());
         }catch (Exception e) {
-            Notification notification = Notification.show("Se produjo un error intentando realizar la transaccion", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Utils.showErrorMessage("An error occurred while trying to save the product");
         }
 
     }
 
 
-    private void validateFields(Product product) {
-        if (product.getName().isBlank() || product.getDescription().isBlank() || product.getStatus() == null || product.getQuantity() <= 0 || product.getPrice().doubleValue() <= 0 || product.getRegistryDate() == null || product.getCode().isBlank() ) {
-            throw new CustomException("Todos los campos son requeridos");}
+
+    private boolean isFieldsInvalid() {
+        Map<String, Object> fields = new HashMap<>();
+        fields.put("name", nameField.getValue());
+        fields.put("description", descriptionField.getValue());
+        fields.put("status", statusComboBox.getValue());
+        fields.put("quantity", quantityField.getValue());
+        fields.put("price", priceField.getValue());
+        fields.put("registryDate", registrationDatePicker.getValue());
+        fields.put("code", productCodeField.getValue());
+
+        for (Map.Entry<String, Object> entry : fields.entrySet()) {
+            if(entry.getValue() == null || entry.getValue().toString().isBlank()){
+                String message = String.format("The field %s is required", entry.getKey());
+                Utils.showErrorMessage(message);
+                return true;
+            }
+        }
+
+        Map<String, Boolean> invalidFields = new HashMap<>();
+        invalidFields.put("name", nameField.isInvalid());
+        invalidFields.put("description", descriptionField.isInvalid());
+        invalidFields.put("status", statusComboBox.isInvalid());
+        invalidFields.put("quantity", quantityField.isInvalid());
+        invalidFields.put("price", priceField.isInvalid());
+        invalidFields.put("registryDate", registrationDatePicker.isInvalid());
+        invalidFields.put("code", productCodeField.isInvalid());
+
+        for (Map.Entry<String, Boolean> entry : invalidFields.entrySet()) {
+            if(entry.getValue()){
+                String message = String.format("The field %s is invalid", entry.getKey());
+                Utils.showErrorMessage(message);
+                return true;
+            }
+        }
+
+        return false;
     }
 
 
 
     private void clearFields() {
         nameField.clear();
+        nameField.setInvalid(false);
         descriptionField.clear();
+        descriptionField.setInvalid(false);
         statusComboBox.clear();
+        statusComboBox.setInvalid(false);
         registrationDatePicker.clear();
+        registrationDatePicker.setInvalid(false);
         priceField.clear();
-        quantityField.clear();
+        priceField.setInvalid(false);
+        quantityField.setValue("1");
+        quantityField.setInvalid(false);
         productCodeField.clear();
+        productCodeField.setInvalid(false);
+        productCodeField.focus();
+
     }
 
 }

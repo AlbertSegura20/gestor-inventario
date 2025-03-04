@@ -11,8 +11,12 @@ import java.util.List;
 @GraphQLApi
 public class GetClientGraphQL {
 
+    private final ClientRepository clientRepository;
+
     @Inject
-    ClientRepository clientRepository;
+    public GetClientGraphQL(ClientRepository clientRepository) {
+        this.clientRepository = clientRepository;
+    }
 
     @Query("getClient")
     @Transactional
