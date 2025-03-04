@@ -5,9 +5,9 @@ import com.apec.poo.repository.ClientRepository;
 import com.apec.poo.repository.TransactionRepository;
 import com.apec.poo.utils.CustomException;
 import com.apec.poo.utils.Utils;
-import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.icon.Icon;
@@ -27,52 +27,53 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
+import java.util.HashMap;
+import java.util.Map;
 
 
 @PageTitle("Client")
 @Route("client")
-@Menu(order = 0, title = "Client", icon = LineAwesomeIconUrl.USER)
-public class ClientView extends Composite<VerticalLayout> {
+@Menu(order = 0, title = "Clients", icon = LineAwesomeIconUrl.USER)
+public class ClientView extends ClientViewAbstract {
 
-
-    private final ClientRepository clientRepository;
-    TextField firstNameField = createNameField();
-    TextField lastNameField = createLastNameField();
-    TextField phoneField = new TextField("Phone Number");
-    EmailField emailField = createEmailField();
     private static final String FULL_WIDTH = "100%";
     private static final String MAX_WIDTH = "800px";
     private static final String MIN_CONTENT = "min-content";
-    Tab tab1 = new Tab("Register client");
-    Tab tab2 = new Tab("All clients");
-    TabSheet tabs = new TabSheet();
+    private final ClientRepository clientRepository;
+    private final TextField firstNameField = createNameField();
+    private final TextField lastNameField = createLastNameField();
+    private final TextField phoneField = createPhoneNumberField();
+    private final EmailField emailField = createEmailField();
+    private final Tab registerClientTab = new Tab("Register client");
+    private final Tab allClientsTab = new Tab("All clients");
+    private final TabSheet mainTabSheet = new TabSheet();
+    private final ComboBox<String> countryCodeCombo = createCountryCodeField();
+
+
 
     @Inject
-    public ClientView(ClientRepository clientRepository , TransactionRepository transactionRepository) {
+    public ClientView(ClientRepository clientRepository, TransactionRepository transactionRepository) {
         this.clientRepository = clientRepository;
         VerticalLayout mainLayout = createMainLayout();
         VerticalLayout content = new VerticalLayout();
         FormLayout formLayout = createFormLayout();
         ClientGridView clientGridView = new ClientGridView(clientRepository, transactionRepository);
         HorizontalLayout buttonLayout = saveButtonLayout();
-        tabs.setWidth(FULL_WIDTH);
-        tabs.add(tab1, mainLayout);
-        tabs.add(tab2, clientGridView);
-        tabs.addSelectedChangeListener(event -> {
+        mainTabSheet.setWidth(FULL_WIDTH);
+        mainTabSheet.add(registerClientTab, mainLayout);
+        mainTabSheet.add(allClientsTab, clientGridView);
+        mainTabSheet.addSelectedChangeListener(event -> {
             Tab tab = event.getSelectedTab();
-            if (tab.getLabel().equals("All clients")){
+            if (tab.getLabel().equals("All clients")) {
                 clientGridView.fillGridWithData();
 
             }
         });
 
 
-        content.add(tabs);
+        content.add(mainTabSheet);
         mainLayout.add(new H3("Client Information"), formLayout, buttonLayout);
         getContent().add(content);
-//        setPhoneNumberMask();
-        PhoneNumberMaskView();
-
     }
 
     private VerticalLayout createMainLayout() {
@@ -80,19 +81,19 @@ public class ClientView extends Composite<VerticalLayout> {
         mainLayout.setWidth(FULL_WIDTH);
         mainLayout.setMaxWidth(MAX_WIDTH);
         mainLayout.setHeight(MIN_CONTENT);
-
         getContent().setWidth(FULL_WIDTH);
         getContent().getStyle().set("flex-grow", "1");
         getContent().setJustifyContentMode(JustifyContentMode.START);
         getContent().setAlignItems(Alignment.CENTER);
-
         return mainLayout;
     }
 
     private FormLayout createFormLayout() {
         FormLayout formLayout = new FormLayout();
         formLayout.setWidth(FULL_WIDTH);
-        formLayout.add(firstNameField, lastNameField, phoneField, emailField);
+        HorizontalLayout phoneLayout = new HorizontalLayout();
+        phoneLayout.add(countryCodeCombo, phoneField);
+        formLayout.add(firstNameField, lastNameField, phoneLayout, emailField);
         return formLayout;
     }
 
@@ -115,123 +116,113 @@ public class ClientView extends Composite<VerticalLayout> {
         });
 
         cancelButton.setWidth(MIN_CONTENT);
-
         buttonLayout.add(saveButton, cancelButton);
         return buttonLayout;
     }
 
     private TextField createNameField() {
-        TextField clientName = new TextField("First Name");
-        clientName.setPlaceholder("John");
-        return clientName;
-
+        TextField nameField = new TextField("First Name");
+        nameField.setWidth(FULL_WIDTH);
+        nameField.setRequired(true);
+        nameField.setPlaceholder("John");
+        nameField.addValueChangeListener(event ->
+                nameFieldValidationListener(event, nameField));
+        return nameField;
     }
+
+
     private TextField createLastNameField() {
-        TextField clientName = new TextField("Last Name");
-        clientName.setPlaceholder("Doe");
-        return clientName;
-
+        TextField lastName = new TextField("Last Name");
+        lastName.setWidth(FULL_WIDTH);
+        lastName.setRequired(true);
+        lastName.setPlaceholder("Doe");
+        lastName.addValueChangeListener(event -> lastNameFieldValidationListener(event, lastName));
+        return lastName;
     }
 
 
-        private EmailField createEmailField() {
-        EmailField emailCField = new EmailField("Email");
-        emailCField.setPlaceholder("Example@gmail.com");
-        return emailCField;
-
+    private TextField createPhoneNumberField() {
+        TextField field = new TextField("Phone Number");
+        field.setWidthFull();
+        field.setRequired(true);
+        field.setPlaceholder("123-456-7890");
+        field.addValueChangeListener(event -> phoneFieldValidationListener(event, field));
+        return field;
     }
 
 
     @Transactional
-    public void saveClient(){
+    public void saveClient() {
+        if (isInvalidFields()) {
+            return;
+        }
         try {
             Client client = createClient();
             clientRepository.persist(client);
             Utils.showInfoMessage("Client saved");
             clearFields();
-        }catch (CustomException e){
+        } catch (CustomException e) {
             Utils.showErrorMessage(e.getMessage());
-        }catch (Exception e) {
+        } catch (Exception e) {
             Utils.showErrorMessage("An error occurred while trying to save the client");
-
         }
 
     }
-
-    private void setPhoneNumberMask(){
-        phoneField.setPlaceholder("+123-456-7890");
-
-        phoneField.addValueChangeListener(event -> {
-            String value = event.getValue();
-            if (!value.matches("\\+?\\d{0,3}-?\\d{0,3}-?\\d{0,4}")) {
-                phoneField.setValue(""); // Clear input if invalid
-                phoneField.setErrorMessage("Invalid phone number format");
-            }
-        });
-
-    }
-
-
-    public void PhoneNumberMaskView() {
-
-        // Set placeholder to show expected format
-        phoneField.setPlaceholder("+123-456-7890");
-
-
-
-        // Add a listener to apply the mask as the user types
-        phoneField.addBlurListener( e -> {
-            String rawValue = phoneField.getValue().replaceAll("[^0-9]", ""); // Remove all non-numeric characters
-            StringBuilder maskedValue = new StringBuilder();
-
-            // Apply the masking logic
-            if (!rawValue.isEmpty()) {
-                for (int i = 0; i < rawValue.length(); i++) {
-                    if (i == 3 || i == 6) {
-                        maskedValue.append("-");
-                    }
-                    maskedValue.append(rawValue.charAt(i));
-                }
-            }
-
-            // Update the text field value with the masked format
-            phoneField.setValue(maskedValue.toString());
-        }); // Add debounce to prevent excessive calls
-
-        // Add the phone field to the layout
-
-    }
-
-
-
 
     private Client createClient() {
         Client client = new Client();
         client.setName(firstNameField.getValue());
         client.setLastName(lastNameField.getValue());
         client.setPhoneNumber(phoneField.getValue());
+        client.setCountryCode(countryCodeCombo.getValue());
         client.setEmail(emailField.getValue());
-
-        validateClient(client);
-
         return client;
     }
 
-    private void validateClient(Client client){
-        if(client.getName().isEmpty() || client.getLastName().isEmpty() || client.getPhoneNumber().isEmpty() || client.getEmail().isEmpty()){
-            throw new CustomException("All fields are required");
-        }
-        if(!client.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")){
-            throw new CustomException("Client email must be a valid email");
+    private boolean isInvalidFields() {
+        Map<String, Boolean> invalidInput = new HashMap<>();
+        invalidInput.put("First Name", firstNameField.isInvalid());
+        invalidInput.put("Last Name", lastNameField.isInvalid());
+        invalidInput.put("Phone", phoneField.isInvalid());
+        invalidInput.put("Country Code", countryCodeCombo.isInvalid());
+        invalidInput.put("Email", emailField.isInvalid());
 
+        for (Map.Entry<String, Boolean> entry : invalidInput.entrySet()) {
+            if (entry.getValue()) {
+                Utils.showErrorMessage("Invalid " + entry.getKey());
+                return true;
+            }
         }
+
+        Map<String, Boolean> emptyInput = new HashMap<>();
+        emptyInput.put("First Name", firstNameField.getValue().isBlank());
+        emptyInput.put("Last Name", lastNameField.getValue().isBlank());
+        emptyInput.put("Phone", phoneField.getValue().isBlank());
+        emptyInput.put("Country Code", (countryCodeCombo.getValue() == null || countryCodeCombo.getValue().isBlank()));
+        emptyInput.put("Email", emailField.getValue().isBlank());
+
+        for (Map.Entry<String, Boolean> entry : emptyInput.entrySet()) {
+            if (entry.getValue()) {
+                Utils.showErrorMessage("Required Field: " + entry.getKey());
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void clearFields() {
         firstNameField.clear();
+        firstNameField.setInvalid(false);
         lastNameField.clear();
+        lastNameField.setInvalid(false);
         phoneField.clear();
+        phoneField.setInvalid(false);
         emailField.clear();
+        emailField.setInvalid(false);
+        firstNameField.focus();
+        countryCodeCombo.clear();
+        countryCodeCombo.setInvalid(false);
     }
 
 

@@ -1,13 +1,14 @@
 package com.apec.poo.view;
 
+import com.apec.poo.entities.AbstractEntity;
 import com.apec.poo.entities.Client;
 import com.apec.poo.repository.ClientRepository;
 import com.apec.poo.repository.TransactionRepository;
 import com.apec.poo.utils.Utils;
 import com.apec.poo.utils.ValidationMessage;
-import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.editor.Editor;
@@ -27,7 +28,11 @@ import com.vaadin.flow.router.Route;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,7 +40,7 @@ import java.util.logging.Logger;
 @PageTitle("All Clients")
 @Route("allclients")
 @ApplicationScoped
-public class ClientGridView extends Composite<VerticalLayout> {
+public class ClientGridView extends ClientViewAbstract {
 
     private static final Logger LOGGER = Logger.getLogger(ClientGridView.class.getName());
 
@@ -78,10 +83,10 @@ public class ClientGridView extends Composite<VerticalLayout> {
         return mainLayout;
     }
 
-    private HorizontalLayout createDivForTitleandFilter(){
+    private HorizontalLayout createDivForTitleandFilter() {
         HorizontalLayout divLayout = new HorizontalLayout();
         divLayout.setWidthFull();
-        divLayout.add(new H3("Client Information"), createFilterField());
+        divLayout.add(new H3("Customer List"), createFilterField());
         divLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
         return divLayout;
     }
@@ -102,20 +107,24 @@ public class ClientGridView extends Composite<VerticalLayout> {
 
         Grid.Column<Client> firstNameColumn = grid
                 .addColumn(Client::getName).setHeader("First name")
-                .setWidth(WIDTH)
+                .setWidth("200px")
                 .setFlexGrow(0);
         Grid.Column<Client> lastNameColumn = grid
                 .addColumn(Client::getLastName)
                 .setHeader("Last name")
-                .setWidth("160px")
+                .setWidth("200px")
                 .setFlexGrow(0);
         Grid.Column<Client> emailColumn = grid
                 .addColumn(Client::getEmail)
-                .setWidth(WIDTH)
+                .setWidth("200px")
                 .setHeader("Email");
+        Grid.Column<Client> codeColumn = grid
+                .addColumn(Client::getCountryCode)
+                .setWidth("150px")
+                .setHeader("Code");
         Grid.Column<Client> phoneColumn = grid
                 .addColumn(Client::getPhoneNumber)
-                .setWidth("100px")
+                .setWidth("154px")
                 .setHeader("Phone");
 
         Grid.Column<Client> editColumn = grid.addComponentColumn(client -> {
@@ -153,6 +162,8 @@ public class ClientGridView extends Composite<VerticalLayout> {
 
         TextField firstNameField = new TextField();
         firstNameField.setWidthFull();
+        firstNameField.setRequiredIndicatorVisible(true);
+        firstNameField.addValueChangeListener(event -> nameFieldValidationListener(event, firstNameField));
         binder.forField(firstNameField)
                 .asRequired("First name must not be empty")
                 .withStatusLabel(firstNameValidationMessage)
@@ -161,6 +172,8 @@ public class ClientGridView extends Composite<VerticalLayout> {
 
         TextField lastNameField = new TextField();
         lastNameField.setWidthFull();
+        lastNameField.setRequiredIndicatorVisible(true);
+        lastNameField.addValueChangeListener(event -> lastNameFieldValidationListener(event, lastNameField));
         binder.forField(lastNameField).asRequired("Last name must not be empty")
                 .withStatusLabel(lastNameValidationMessage)
                 .bind(Client::getLastName, Client::setLastName);
@@ -175,8 +188,19 @@ public class ClientGridView extends Composite<VerticalLayout> {
                 .bind(Client::getEmail, Client::setEmail);
         emailColumn.setEditorComponent(emailField);
 
+        ComboBox<String> codeField = createCountryCodeField();
+        codeField.setLabel("");
+        codeField.setWidthFull();
+        binder.forField(codeField)
+                .asRequired("Country Code must not be empty")
+                .withStatusLabel(firstNameValidationMessage)
+                .bind(Client::getCountryCode, Client::setCountryCode);
+        codeColumn.setEditorComponent(codeField);
+
+
         TextField phoneField = new TextField();
         phoneField.setWidthFull();
+        phoneField.addValueChangeListener(event -> phoneFieldValidationListener(event, phoneField));
         binder.forField(phoneField)
                 .asRequired("Phone number must not be empty")
                 .withStatusLabel(firstNameValidationMessage)
@@ -186,8 +210,24 @@ public class ClientGridView extends Composite<VerticalLayout> {
 
         Button updateButton = new Button("Save", new Icon(VAADIN, "check"), e -> {
             Client client = clientGrid.getEditor().getItem();
-            updateClient(client, firstNameField, lastNameField, emailField, phoneField);
-            editor.save();
+            Map<String, Boolean> fields = new HashMap<>();
+            fields.put("First Name", firstNameField.isInvalid());
+            fields.put("Last Name", lastNameField.isInvalid());
+            fields.put("Email", emailField.isInvalid());
+            fields.put("Phone", phoneField.isInvalid());
+            fields.put("Code", codeField.isInvalid());
+
+            for (Map.Entry<String, Boolean> entry : fields.entrySet()) {
+                if(entry.getValue()){
+                    Utils.showErrorMessage(entry.getKey() + " is invalid");
+                    return;
+                }
+            }
+
+            boolean isSuccess = updateClient(client, firstNameField, lastNameField, emailField, phoneField, codeField);
+            if (isSuccess) {
+                editor.save();
+            }
         });
 
 
@@ -216,37 +256,50 @@ public class ClientGridView extends Composite<VerticalLayout> {
 
 
     @Transactional
-    public void updateClient(Client client, TextField firstNameField, TextField lastNameField, EmailField emailField, TextField phoneField) {
+    public boolean updateClient(Client client, TextField firstNameField, TextField lastNameField, EmailField emailField,
+                                TextField phoneField, ComboBox<String> countryCodeField) {
         String clientNameUpdated = firstNameField.getValue();
         String lastNameUpdated = lastNameField.getValue();
         String emailUpdated = emailField.getValue();
         String phoneUpdated = phoneField.getValue();
+        String countryCodeUpdated = countryCodeField.getValue();
 
         if (clientNameUpdated == null || clientNameUpdated.isEmpty()) {
             Utils.showErrorMessage("Client name must not be empty");
-            return;
+            return false;
         }
         if (lastNameUpdated == null || lastNameUpdated.isEmpty()) {
             Utils.showErrorMessage("Client last name must not be empty");
-            return;
+            return false;
         }
         if (emailUpdated == null || emailUpdated.isEmpty()) {
             Utils.showErrorMessage("Client email must not be empty");
-            return;
+            return false;
         }
         if (phoneUpdated == null || phoneUpdated.isEmpty()) {
             Utils.showErrorMessage("Client phone number must not be empty");
-            return;
+            return false;
         }
-        if(!emailUpdated.matches("^[A-Za-z0-9+_.-]+@(.+)$")){
+
+        if (countryCodeUpdated == null || countryCodeUpdated.isEmpty()) {
+            Utils.showErrorMessage("Country code must not be empty");
+            return false;
+        }
+
+        if (!emailUpdated.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
             Utils.showErrorMessage("Client email must be a valid email");
-            return;
+            return false;
         }
 
+        try {
+            clientRepository.updateClient(client, clientNameUpdated, lastNameUpdated, emailUpdated, phoneUpdated, countryCodeUpdated);
+        } catch (Exception e) {
+            Utils.showErrorMessage("Error updating client, please try again later");
+            return false;
+        }
 
-
-        clientRepository.updateClient(client, clientNameUpdated, lastNameUpdated, emailUpdated, phoneUpdated);
         Utils.showInfoMessage("Client updated successfully");
+        return true;
     }
 
     private void filterClients(String filterText) {
@@ -260,7 +313,9 @@ public class ClientGridView extends Composite<VerticalLayout> {
                     .filter(client -> client.getName().toLowerCase().contains(filterText.toLowerCase())
                             || client.getLastName().toLowerCase().contains(filterText.toLowerCase())
                             || client.getPhoneNumber().contains(filterText)
-                            || client.getEmail().contains(filterText)).toList();
+                            || client.getEmail().contains(filterText)
+                            || client.getCountryCode().contains(filterText)
+                    ).toList();
         }
 
         clientGrid.setItems(filteredClients);
@@ -270,6 +325,8 @@ public class ClientGridView extends Composite<VerticalLayout> {
 
     public void fillGridWithData() {
         List<Client> clients = clientRepository.findAll().list();
+
+        clients.sort(Comparator.comparing(Client::getId));
         clientGrid.setItems(clients);
 
     }
@@ -294,6 +351,3 @@ public class ClientGridView extends Composite<VerticalLayout> {
     }
 
 }
-
-
-

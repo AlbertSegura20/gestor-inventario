@@ -6,13 +6,11 @@ import com.apec.poo.repository.ProductRepository;
 import com.apec.poo.repository.TransactionRepository;
 import com.apec.poo.utils.CustomException;
 import com.apec.poo.utils.Utils;
-import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
@@ -36,8 +34,8 @@ import java.util.*;
 
 @PageTitle("Product")
 @Route("product")
-@Menu(order = 1,title = "Product", icon = LineAwesomeIconUrl.BOX_OPEN_SOLID)
-public class ProductView extends Composite<VerticalLayout> {
+@Menu(order = 1,title = "Products", icon = LineAwesomeIconUrl.BOX_OPEN_SOLID)
+public class ProductView extends ProductViewAbstract {
 
 
     private final ProductRepository productRepository;
@@ -67,11 +65,11 @@ public class ProductView extends Composite<VerticalLayout> {
         tabs.add(tab1, mainLayout);
         tabs.add(tab2, productGridView);
 
-       tabs.addSelectedChangeListener(event -> {
-         if (tabs.getSelectedTab().equals(tab2)){
-             productGridView.fillGridWithData();
-         }
-       });
+        tabs.addSelectedChangeListener(event -> {
+            if (tabs.getSelectedTab().equals(tab2)){
+                productGridView.fillGridWithData();
+            }
+        });
 
         content.add(tabs);
         getContent().add(content);
@@ -131,24 +129,12 @@ public class ProductView extends Composite<VerticalLayout> {
         return buttonLayout;
     }
 
-    private TextField createNameField() {
-
-        TextField name = new TextField("Name");
-        name.setPlaceholder("Enter name");
-        return name;
-    }
-
-    private TextField createDescriptionField() {
-
-        TextField description = new TextField("Description");
-        description.setPlaceholder("Enter description");
-        return description;
-    }
-
     private ComboBox<SampleItem> createComboBox() {
         ComboBox<SampleItem> comboBox = new ComboBox<>("Status");
         comboBox.setWidth(MIN_CONTENT);
         comboBox.setPlaceholder("Select status");
+        comboBox.setRequired(true);
+        comboBox.setRequiredIndicatorVisible(true);
         setComboBoxSampleData(comboBox);
         return comboBox;
     }
@@ -157,34 +143,12 @@ public class ProductView extends Composite<VerticalLayout> {
         DatePicker datePicker = new DatePicker("Registration Date");
         datePicker.setWidth(MIN_CONTENT);
         datePicker.setPlaceholder("Select date");
+        datePicker.setRequired(true);
+        datePicker.setRequiredIndicatorVisible(true);
         return datePicker;
     }
 
 
-    private TextField createQuantityField() {
-        TextField quantity = new TextField("Quantity");
-        quantity.setWidth(MIN_CONTENT);
-        quantity.setValue("1");
-        return quantity;
-    }
-
-
-    private TextField createPriceField() {
-        TextField price = new TextField("Price");
-        price.setWidth(MIN_CONTENT);
-        price.setPlaceholder("0");
-        Div dollarPrefix = new Div();
-        dollarPrefix.setText("$");
-        price.setPrefixComponent(dollarPrefix);
-        return price;
-    }
-
-    private TextField createCodeField() {
-        TextField codeField = new TextField("Product code");
-        codeField.setWidth(MIN_CONTENT);
-        codeField.setPlaceholder("xxxx-xxxx-xxxx");
-        return codeField;
-    }
 
     private Button createPrimaryButton() {
         Button button = new Button("Save", new Icon("vaadin", "check"));
@@ -244,7 +208,7 @@ public class ProductView extends Composite<VerticalLayout> {
         }catch (CustomException e){
             Utils.showErrorMessage(e.getMessage());
         }catch (Exception e) {
-           Utils.showErrorMessage("An error occurred while trying to save the product");
+            Utils.showErrorMessage("An error occurred while trying to save the product");
         }
 
     }
@@ -262,10 +226,26 @@ public class ProductView extends Composite<VerticalLayout> {
         fields.put("code", productCodeField.getValue());
 
         for (Map.Entry<String, Object> entry : fields.entrySet()) {
-            if(entry.getValue() == null || entry.getValue().toString().isEmpty()){
+            if(entry.getValue() == null || entry.getValue().toString().isBlank()){
                 String message = String.format("The field %s is required", entry.getKey());
                 Utils.showErrorMessage(message);
+                return true;
+            }
+        }
 
+        Map<String, Boolean> invalidFields = new HashMap<>();
+        invalidFields.put("name", nameField.isInvalid());
+        invalidFields.put("description", descriptionField.isInvalid());
+        invalidFields.put("status", statusComboBox.isInvalid());
+        invalidFields.put("quantity", quantityField.isInvalid());
+        invalidFields.put("price", priceField.isInvalid());
+        invalidFields.put("registryDate", registrationDatePicker.isInvalid());
+        invalidFields.put("code", productCodeField.isInvalid());
+
+        for (Map.Entry<String, Boolean> entry : invalidFields.entrySet()) {
+            if(entry.getValue()){
+                String message = String.format("The field %s is invalid", entry.getKey());
+                Utils.showErrorMessage(message);
                 return true;
             }
         }
@@ -277,12 +257,21 @@ public class ProductView extends Composite<VerticalLayout> {
 
     private void clearFields() {
         nameField.clear();
+        nameField.setInvalid(false);
         descriptionField.clear();
+        descriptionField.setInvalid(false);
         statusComboBox.clear();
+        statusComboBox.setInvalid(false);
         registrationDatePicker.clear();
+        registrationDatePicker.setInvalid(false);
         priceField.clear();
+        priceField.setInvalid(false);
         quantityField.setValue("1");
+        quantityField.setInvalid(false);
         productCodeField.clear();
+        productCodeField.setInvalid(false);
+        productCodeField.focus();
+
     }
 
 }

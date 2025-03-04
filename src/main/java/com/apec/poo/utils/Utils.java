@@ -5,6 +5,10 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 
 public class Utils {
 
+    private Utils() {
+
+    }
+
     public static void showErrorMessage(String message) {
         showMessage(message, NotificationVariant.LUMO_ERROR);
     }

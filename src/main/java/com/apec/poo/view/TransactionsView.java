@@ -114,7 +114,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
     }
 
     private H3 createHeader() {
-        H3 header = new H3("Transaction");
+        H3 header = new H3("Transaction Information");
         header.setWidth(FULL_WIDTH);
         return header;
     }
@@ -197,6 +197,10 @@ public class TransactionsView extends Composite<VerticalLayout> {
                 }
                 if (priceField.getValue() == null) {
                     priceField.setValue(0.0);
+                }
+
+                if(quantityField.getValue() == 0){
+                    return;
                 }
 
                 if(!eventHandled){
@@ -371,7 +375,7 @@ public class TransactionsView extends Composite<VerticalLayout> {
 
         }
         if(totalQuantityField.getValue() == 0.0 || totalQuantityField.getValue() < 0.0){
-            Utils.showErrorMessage("Error in the quantity field, it must be greater than 0");
+            Utils.showErrorMessage("Error in the total quantity field, it must be greater than 0");
             return true;
         }
 

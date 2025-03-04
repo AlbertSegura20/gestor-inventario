@@ -86,7 +86,7 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
     private HorizontalLayout createDivForTitleandFilter(){
         HorizontalLayout divLayout = new HorizontalLayout();
         divLayout.setWidthFull();
-        divLayout.add(new H3("Transaction Information"), createFilterField());
+        divLayout.add(new H3("Transaction List"), createFilterField());
         divLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
         return divLayout;
     }
@@ -193,12 +193,14 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
                 if(isChecked){
                     selectedTransactions.add(allTransactions.stream().filter(t ->
                             t.getId().equals(id)).findFirst().get());
+                    confirmFileTypeTransaction(selectedTransactions);
+                }else{
+                    Utils.showErrorMessage("Please, select at least one transaction");
                 }
             });
-            confirmFileTypeTransaction(selectedTransactions);
+
         }else{
-            Notification notification = Notification.show("No transactions selected", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Utils.showErrorMessage("Please, select at least one transaction");
         }
     }
 
@@ -238,6 +240,7 @@ public class TransactionsGridView extends Composite<VerticalLayout> {
 
     public void fillGridWithData(){
         List<Transaction> transactions = transactionRepository.findAll().list();
+        transactions.sort(Comparator.comparing(Transaction::getId));
         transactionGrid.setItems(transactions);
     }
 

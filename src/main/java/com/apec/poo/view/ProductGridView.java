@@ -24,25 +24,25 @@ import com.vaadin.flow.data.converter.StringToIntegerConverter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.inject.Inject;
+
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 
 @PageTitle("All Products")
 @Route("allproducts")
-public class ProductGridView extends Composite<VerticalLayout> {
+public class ProductGridView extends ProductViewAbstract {
 
 
     private static final String FULL_WIDTH = "100%";
     private static final String MAX_WIDTH = "100%";
     private static final String MIN_CONTENT = "min-content";
     private static final String WIDTH_130 = "130px";
-    private final Grid<Product> productGrid;
     private static final String VAADIN = "vaadin";
+    private final Grid<Product> productGrid;
     private final ProductRepository productRepository;
     private final TransactionRepository transactionRepository;
     private final ValidationMessage firstNameValidationMessage = new ValidationMessage();
@@ -79,10 +79,10 @@ public class ProductGridView extends Composite<VerticalLayout> {
         return mainLayout;
     }
 
-    private HorizontalLayout createDivForTitleandFilter(){
+    private HorizontalLayout createDivForTitleandFilter() {
         HorizontalLayout divLayout = new HorizontalLayout();
         divLayout.setWidthFull();
-        divLayout.add(new H3("Product Information"), createFilterField());
+        divLayout.add(new H3("Product List"), createFilterField());
         divLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
         return divLayout;
     }
@@ -163,28 +163,32 @@ public class ProductGridView extends Composite<VerticalLayout> {
         editor.setBinder(binder);
         editor.setBuffered(true);
 
-        TextField nameField = new TextField();
+        TextField nameField = createNameField();
+        nameField.setLabel("");
         nameField.setWidthFull();
+//        nameField.addValueChangeListener(event -> textFieldValidationListener(event, nameField, "Invalid name"));
         binder.forField(nameField)
                 .asRequired("Name must not be empty")
-
                 .bind(Product::getName, Product::setName);
         nameColumn.setEditorComponent(nameField);
 
-        TextField descriptionField = new TextField();
+        TextField descriptionField = createDescriptionField();
         descriptionField.setWidthFull();
+        descriptionField.setLabel("");
         binder.forField(descriptionField).asRequired("Description must not be empty")
 
                 .bind(Product::getDescription, Product::setDescription);
         descriptionColumn.setEditorComponent(descriptionField);
 
-        TextField priceField = new TextField();
+        TextField priceField = createPriceField();
         priceField.setWidthFull();
+        priceField.setLabel("");
         binder.forField(priceField).asRequired("Price must not be empty")
                 .bind(Product::getTransientPrice, Product::setTransientPrice);
         priceColumn.setEditorComponent(priceField);
 
-        TextField quantity = new TextField();
+        TextField quantity = createQuantityField();
+        quantity.setLabel("");
         quantity.setWidthFull();
         binder.forField(quantity).asRequired("Quantity must not be empty")
                 .withConverter(new StringToIntegerConverter("Invalid quantity format"))
@@ -193,8 +197,11 @@ public class ProductGridView extends Composite<VerticalLayout> {
 
         Button updateButton = new Button("Save", new Icon(VAADIN, "check"), e -> {
             Product product = grid.getEditor().getItem();
-            editor.save();
-            updateProduct(product, nameField, descriptionField, priceField, quantity);
+            boolean success = updateProduct(product, nameField, descriptionField, priceField, quantity);
+            if (success) {
+                editor.save();
+            }
+
         });
 
         updateButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
@@ -222,27 +229,43 @@ public class ProductGridView extends Composite<VerticalLayout> {
         return grid;
     }
 
-    public void updateProduct(Product product, TextField nameField, TextField descriptionField, TextField priceField, TextField quantityField) {
+    public boolean updateProduct(Product product, TextField nameField, TextField descriptionField, TextField priceField,
+                                 TextField quantityField) {
         String nameUpdated = nameField.getValue();
         String descriptionUpdated = descriptionField.getValue();
         String priceUpdated = priceField.getValue();
         String quantityUpdated = quantityField.getValue();
 
-        if (nameUpdated == null || nameUpdated.isEmpty()) {
+        Map<String, String> fieldsValidation = new HashMap<>();
+        fieldsValidation.put("Name field", nameUpdated);
+        fieldsValidation.put("Description field", descriptionUpdated);
+        fieldsValidation.put("Price field", priceUpdated);
+        fieldsValidation.put("Quantity field", quantityUpdated);
+
+        for (Map.Entry<String, String> entry : fieldsValidation.entrySet()) {
+            String value = entry.getValue();
+            if (value != null && value.matches("^[\\p{Punct}\\s]*$")) {
+                nameField.setInvalid(true);
+                Utils.showErrorMessage(entry.getKey() + " is invalid");
+                return false;
+            }
+        }
+
+        if (nameUpdated == null || nameUpdated.isBlank()) {
             Utils.showErrorMessage("Name must not be empty");
-            return;
+            return false;
         }
         if (descriptionUpdated == null || descriptionUpdated.isEmpty()) {
             Utils.showErrorMessage("Description must not be empty");
-            return;
+            return false;
         }
-        if (priceUpdated == null || priceUpdated.isEmpty()) {
+        if (priceUpdated == null || priceUpdated.isBlank()) {
             Utils.showErrorMessage("Price must not be empty");
-            return;
+            return false;
         }
-        if (quantityUpdated == null || quantityUpdated.isEmpty()) {
+        if (quantityUpdated == null || quantityUpdated.isBlank()) {
             Utils.showErrorMessage("Quantity must not be empty");
-            return;
+            return false;
         }
         BigDecimal price;
         DecimalFormat decimalFormat = (DecimalFormat) NumberFormat.getInstance(Locale.US);
@@ -251,13 +274,19 @@ public class ProductGridView extends Composite<VerticalLayout> {
             price = (BigDecimal) decimalFormat.parse(priceUpdated);
         } catch (ParseException e) {
             Utils.showErrorMessage("Invalid price format. Please enter a valid number.");
-            return;
+            return false;
         }
 
-        int quantity = Integer.parseInt(quantityUpdated);
-        productRepository.updateProduct(product.getId(), nameUpdated, price, quantity, descriptionUpdated);
-        Utils.showInfoMessage("The product has been updated successfully");
+        try {
+            int quantity = Integer.parseInt(quantityUpdated);
+            productRepository.updateProduct(product.getId(), nameUpdated, price, quantity, descriptionUpdated);
+            Utils.showInfoMessage("The product has been updated successfully");
+        } catch (Exception e) {
+            Utils.showErrorMessage("Error updating the product");
+            return false;
+        }
 
+        return true;
     }
 
     private void deleteProduct(Product product) {
@@ -289,7 +318,10 @@ public class ProductGridView extends Composite<VerticalLayout> {
                             || product.getDescription().toLowerCase().contains(filterText.toLowerCase())
                             || product.getPrice().toString().contains(filterText)
                             || product.getStatus().toString().contains(filterText)
-                            || product.getRegistryDate().toString().contains(filterText)).toList();
+                            || product.getRegistryDate().toString().contains(filterText)
+                            || String.valueOf(product.getQuantity()).contains(filterText)
+                            || product.getStatus().toString().toLowerCase().contains(filterText.toLowerCase())
+                    ).toList();
         }
 
         filteredProducts.forEach(Product::loadPrice);
@@ -301,6 +333,7 @@ public class ProductGridView extends Composite<VerticalLayout> {
     public void fillGridWithData() {
         List<Product> products = productRepository.findAll().list();
         products.forEach(Product::loadPrice);
+        products.sort(Comparator.comparing(Product::getId));
         productGrid.setItems(products);
     }
 
